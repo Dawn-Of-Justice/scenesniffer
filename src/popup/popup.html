@@ -3,32 +3,243 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>YouTube Shorts Identifier</title>
-    <link rel="stylesheet" href="popup.css">
+    <title>YT Scenecope</title>
+    <style>
+        /* YouTube-like styling */
+        body {
+            font-family: 'Roboto', 'YouTube Sans', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #0F0F0F; /* YouTube dark mode background */
+            color: #FFFFFF;
+            width: 350px;
+        }
+        
+        .container {
+            padding: 16px;
+        }
+        
+        .logo-container {
+            display: flex;
+            align-items: center;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #303030;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            font-size: 18px;
+            font-weight: 500;
+        }
+        
+        .logo svg {
+            margin-right: 8px;
+            color: #FF0000; /* YouTube red */
+        }
+        
+        h2 {
+            color: #FFFFFF;
+            margin-top: 0;
+            font-size: 16px;
+            font-weight: 500;
+        }
+        
+        h3, h4 {
+            font-size: 16px;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #AAAAAA;
+        }
+        
+        p {
+            font-size: 14px;
+            margin: 8px 0;
+            color: #AAAAAA;
+        }
+        
+        .form-group {
+            margin: 15px 0;
+        }
+        
+        input {
+            width: 100%;
+            padding: 10px 12px;
+            margin-bottom: 12px;
+            background-color: #212121;
+            border: 1px solid #303030;
+            border-radius: 4px;
+            box-sizing: border-box;
+            color: #FFFFFF;
+            font-size: 14px;
+        }
+        
+        input:focus {
+            outline: none;
+            border-color: #3EA6FF; /* YouTube blue */
+        }
+        
+        button {
+            background-color: #3EA6FF; /* YouTube blue */
+            color: #0F0F0F;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 18px;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 14px;
+            transition: background-color 0.2s;
+        }
+        
+        button:hover {
+            background-color: #65B8FF; /* Lighter blue */
+        }
+        
+        .primary-button {
+            background-color: #FF0000; /* YouTube red */
+            color: white;
+        }
+        
+        .primary-button:hover {
+            background-color: #CC0000; /* Darker red */
+        }
+        
+        .small-button {
+            padding: 6px 10px;
+            font-size: 12px;
+            margin-left: 8px;
+            border-radius: 14px;
+        }
+        
+        .message {
+            color: #FF0000;
+            font-size: 12px;
+            min-height: 16px;
+            margin-top: 8px;
+        }
+        
+        .status {
+            background-color: #212121;
+            padding: 12px;
+            border-radius: 8px;
+            margin: 12px 0;
+            border: 1px solid #303030;
+        }
+        
+        .status-item {
+            display: flex;
+            align-items: center;
+            margin: 5px 0;
+        }
+        
+        .label {
+            font-weight: 500;
+            width: 70px;
+            color: #AAAAAA;
+        }
+        
+        .value {
+            flex-grow: 1;
+            color: #FFFFFF;
+        }
+        
+        ol {
+            margin-left: -10px;
+            font-size: 14px;
+            color: #AAAAAA;
+            padding-left: 24px;
+        }
+        
+        li {
+            margin-bottom: 6px;
+        }
+        
+        a {
+            color: #3EA6FF; /* YouTube blue */
+            text-decoration: none;
+        }
+        
+        a:hover {
+            text-decoration: underline;
+        }
+        
+        .socials {
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid #303030;
+        }
+        
+        .social-links {
+            display: flex;
+            gap: 10px;
+            margin-top: 8px;
+        }
+        
+        .social-icon {
+            display: flex;
+            align-items: center;
+            color: #AAAAAA;
+            font-size: 14px;
+        }
+        
+        .social-icon svg {
+            margin-right: 4px;
+        }
+        
+        .social-icon:hover {
+            color: #3EA6FF;
+        }
+        
+        #result-container {
+            margin-top: 12px;
+            padding: 12px;
+            border: 1px solid #303030;
+            border-radius: 8px;
+            background-color: #212121;
+            max-height: 200px;
+            overflow-y: auto;
+            font-size: 14px;
+            line-height: 1.4;
+            color: #FFFFFF;
+        }
+    </style>
 </head>
 <body>
     <div class="container">
+        <!-- YouTube-like header with logo -->
+        <div class="logo-container">
+            <div class="logo">
+                <svg xmlns="http://www.w3.org/2000/svg" height="24" width="24" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M20 6h-5.586l2.293-2.293-1.414-1.414L12 5.586 8.707 2.293 7.293 3.707 9.586 6H4c-1.103 0-2 .897-2 2v10c0 1.103.897 2 2 2h16c1.103 0 2-.897 2-2V8c0-1.103-.897-2-2-2z"/>
+                    <path d="M4 16h16V8H4v8zm7-6h2v2h-2v-2z"/>
+                </svg>
+                YT Scenecope
+            </div>
+        </div>
+        
+        <!-- API Key Setup View -->
         <div id="setup-view" style="display: none;">
-            <h2>Welcome to YouTube Shorts Identifier</h2>
-            <p>To use this extension, you need a Google Gemini API key.</p>
+            <h2>Welcome to YT Scenecope</h2>
+            <p>To use this extension, you need an AIMLAPI key.</p>
             
             <ol>
-                <li>Go to <a href="https://makersuite.google.com/app/apikey" target="_blank">Google AI Studio</a></li>
-                <li>Create or sign in to your Google account</li>
-                <li>Get your API key</li>
+                <li>Go to <a href="https://aimlapi.com" target="_blank">AIMLAPI.com</a></li>
+                <li>Create an account or sign in</li>
+                <li>Get your API key from the dashboard</li>
                 <li>Paste it below</li>
             </ol>
             
             <div class="form-group">
-                <input type="text" id="api-key" placeholder="Paste your Gemini API key here" />
-                <button id="save-key">Save API Key</button>
+                <input type="text" id="api-key" placeholder="Paste your API key here" />
+                <button id="save-key" class="primary-button">Save API Key</button>
             </div>
             <p id="setup-message" class="message"></p>
         </div>
         
+        <!-- Main Extension View -->
         <div id="main-view" style="display: none;">
-            <h2>YouTube Shorts Identifier</h2>
-            <p>Visit a YouTube Shorts video to identify which episode it's from!</p>
+            <h2>Identify TV Show Scenes</h2>
             
             <div class="status">
                 <div class="status-item">
@@ -42,22 +253,51 @@
                 </div>
             </div>
             
-            <div id="instructions">
-                <h3>How to use:</h3>
-                <ol>
-                    <li>Navigate to a YouTube Shorts video</li>
-                    <li>The extension will automatically analyze the video</li>
-                    <li>Results will appear at the bottom of the video</li>
+            <div class="form-group">
+                <label for="input-field">YouTube Shorts URL:</label>
+                <input type="text" id="input-field" placeholder="Paste YouTube Shorts URL here" />
+                <button id="identify-button" class="primary-button">Identify Episode</button>
+            </div>
+            
+            <!-- YouTube-style info box -->
+            <div id="info-box" style="background-color: #212121; border-radius: 8px; padding: 12px; margin-top: 12px; border: 1px solid #303030;">
+                <h3 style="margin-top: 0; font-size: 14px; color: #AAAAAA;">How to use:</h3>
+                <ol style="margin-bottom: 0;">
+                    <li>Visit a YouTube Shorts video</li>
+                    <li>Click the red button that appears in the bottom-right corner</li>
+                    <li>Wait for the scene to be analyzed</li>
                 </ol>
+                <p style="font-size: 12px; margin-top: 10px;">Or paste a YouTube Shorts URL above to identify it manually</p>
+            </div>
+            
+            <div id="result-container" style="display: none;">
+                Results will appear here...
             </div>
         </div>
         
+        <!-- Social Links Section with Icons -->
         <div class="socials">
             <h4>Follow the Developer</h4>
             <div class="social-links">
-                <a href="https://twitter.com/yourusername" target="_blank">Twitter</a>
-                <a href="https://github.com/yourusername" target="_blank">GitHub</a>
-                <a href="https://www.youtube.com/@yourusername" target="_blank">YouTube</a>
+                <a href="https://twitter.com/yourusername" class="social-icon" target="_blank">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M19.633 7.997c.013.175.013.349.013.523 0 5.325-4.053 11.461-11.46 11.461-2.282 0-4.402-.661-6.186-1.809.324.037.636.05.973.05a8.07 8.07 0 0 0 5.001-1.721 4.036 4.036 0 0 1-3.767-2.793c.249.037.499.062.761.062.361 0 .724-.05 1.061-.137a4.027 4.027 0 0 1-3.23-3.953v-.05c.537.299 1.16.486 1.82.511a4.022 4.022 0 0 1-1.796-3.354c0-.748.199-1.434.548-2.032a11.457 11.457 0 0 0 8.306 4.215c-.062-.3-.1-.611-.1-.923a4.026 4.026 0 0 1 4.028-4.028c1.16 0 2.207.486 2.943 1.272a7.957 7.957 0 0 0 2.556-.973 4.02 4.02 0 0 1-1.771 2.22 8.073 8.073 0 0 0 2.319-.624 8.645 8.645 0 0 1-2.019 2.083z"></path>
+                    </svg>
+                    Twitter
+                </a>
+                <a href="https://github.com/yourusername" class="social-icon" target="_blank">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.603-3.369-1.342-3.369-1.342-.454-1.155-1.11-1.462-1.11-1.462-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0 1 12 6.844a9.59 9.59 0 0 1 2.504.337c1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.02 10.02 0 0 0 22 12c0-5.523-4.477-10-10-10z"></path>
+                    </svg>
+                    GitHub
+                </a>
+                <a href="https://www.youtube.com/@yourusername" class="social-icon" target="_blank">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M21.593 7.203a2.506 2.506 0 0 0-1.762-1.766C18.265 5.007 12 5 12 5s-6.264-.007-7.831.44a2.503 2.503 0 0 0-1.767 1.763C2.007 8.769 2 12 2 12s.007 3.232.442 4.798a2.504 2.504 0 0 0 1.767 1.763c1.566.44 7.831.44 7.831.44s6.264 0 7.831-.44a2.506 2.506 0 0 0 1.762-1.763C22.007 15.232 22 12 22 12s0-3.231-.407-4.797z"></path>
+                        <path d="M9.998 15.002 16 12l-6.002-3.002v6.004z" fill="#0F0F0F"></path>
+                    </svg>
+                    YouTube
+                </a>
             </div>
         </div>
     </div>

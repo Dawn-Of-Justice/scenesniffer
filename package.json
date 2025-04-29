@@ -17,7 +17,7 @@
   "author": "Your Name",
   "license": "MIT",
   "dependencies": {
-    "axios": "^0.21.1"
+    "axios": "^1.9.0"
   },
   "devDependencies": {
     "webpack": "^5.0.0",

@@ -5,7 +5,8 @@
   "description": "Identifies which TV show episode a YouTube Shorts clip is from using Google Gemini",
   "permissions": ["storage", "activeTab"],
   "host_permissions": [
-    "https://www.youtube.com/*"
+    "https://www.youtube.com/*",
+    "https://api.aimlapi.com/*"
   ],
   "background": {
     "service_worker": "src/background/background.js",

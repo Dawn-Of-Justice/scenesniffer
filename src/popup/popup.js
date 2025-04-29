@@ -70,23 +70,57 @@ document.addEventListener('DOMContentLoaded', async () => {
     const resultContainer = document.getElementById('result-container');
     const inputField = document.getElementById('input-field');
 
-    identifyButton.addEventListener('click', async () => {
-        const userInput = inputField.value;
-        if (!userInput) {
-            resultContainer.textContent = 'Please enter a valid YouTube Shorts link.';
-            return;
-        }
-
-        try {
-            const response = await chrome.runtime.sendMessage({ action: 'identifyEpisode', url: userInput });
-            if (response && response.episode) {
-                resultContainer.textContent = `Episode: ${response.episode.title} from ${response.episode.show}`;
-            } else {
-                resultContainer.textContent = 'Episode not found. Please try again.';
+    // Fix the identify button click handler
+    if (identifyButton && resultContainer && inputField) {
+        identifyButton.addEventListener('click', async () => {
+            const userInput = inputField.value.trim();
+            if (!userInput) {
+                resultContainer.textContent = 'Please enter a valid YouTube Shorts link.';
+                return;
             }
-        } catch (error) {
-            console.error('Error identifying episode:', error);
-            resultContainer.textContent = 'An error occurred while identifying the episode.';
-        }
-    });
+
+            try {
+                resultContainer.textContent = 'Analyzing video...';
+                
+                // Extract the video ID from the URL
+                const videoIdMatch = userInput.match(/(?:shorts\/|v=|youtu.be\/)([^?&]+)/);
+                const videoId = videoIdMatch ? videoIdMatch[1] : null;
+                
+                if (!videoId) {
+                    resultContainer.textContent = 'Could not extract video ID from URL. Please enter a valid YouTube Shorts URL.';
+                    return;
+                }
+                
+                // Format the data to match what the background script expects
+                const videoInfo = {
+                    url: userInput,
+                    title: `YouTube Shorts (ID: ${videoId})`,
+                    description: "Manually submitted URL for analysis",
+                    channel: "",
+                    videoId: videoId
+                };
+
+                console.log("Sending video info to background:", videoInfo);
+                
+                // Send the message to the background script
+                const response = await chrome.runtime.sendMessage({ 
+                    action: 'identifyEpisode', 
+                    data: videoInfo 
+                });
+                
+                console.log("Received response:", response);
+                
+                if (response && response.result) {
+                    resultContainer.innerHTML = response.result.replace(/\n/g, '<br>');
+                } else if (response && response.error) {
+                    resultContainer.textContent = `Error: ${response.error}`;
+                } else {
+                    resultContainer.textContent = 'Episode not found. Please try again with a different video.';
+                }
+            } catch (error) {
+                console.error('Error identifying episode:', error);
+                resultContainer.textContent = `Error: ${error.message || 'Unknown error occurred'}`;
+            }
+        });
+    }
 });
