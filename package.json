@@ -14,7 +14,7 @@
     "shorts",
     "gemini"
   ],
-  "author": "Your Name",
+  "author": "Salo Soja Edwin",
   "license": "MIT",
   "dependencies": {
     "axios": "^1.9.0"
