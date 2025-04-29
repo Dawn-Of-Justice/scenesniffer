@@ -61,11 +61,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         setupView.style.display = 'block';
     });
 
-    // Update links with your actual social media profiles
-    // This could be done using variables if you wanted to define them in one place
     const socialLinks = document.querySelectorAll('.social-links a');
-    // You would replace these URLs with your actual social media accounts
-
     const identifyButton = document.getElementById('identify-button');
     const resultContainer = document.getElementById('result-container');
     const inputField = document.getElementById('input-field');

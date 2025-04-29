@@ -1,35 +1,54 @@
 body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-family: 'Roboto', 'YouTube Sans', Arial, sans-serif;
     margin: 0;
     padding: 0;
-    background-color: #f9f9f9;
+    background-color: #0F0F0F; /* YouTube dark mode background */
+    color: #FFFFFF;
+    width: 350px;
 }
 
 .container {
-    width: 320px;
-    padding: 15px;
+    padding: 16px;
 }
 
-h1 {
+.logo-container {
+    display: flex;
+    align-items: center;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #303030;
+}
+
+.logo {
+    display: flex;
+    align-items: center;
     font-size: 18px;
-    margin-bottom: 10px;
-    color: #333;
+    font-weight: 500;
+}
+
+.logo svg {
+    margin-right: 8px;
+    color: #FF0000; /* YouTube red */
 }
 
 h2 {
-    color: #d00;
+    color: #FFFFFF;
     margin-top: 0;
-    font-size: 18px;
+    font-size: 16px;
+    font-weight: 500;
 }
 
 h3, h4 {
     font-size: 16px;
     margin-bottom: 8px;
+    font-weight: 500;
+    color: #AAAAAA;
 }
 
 p {
     font-size: 14px;
     margin: 8px 0;
+    color: #AAAAAA;
 }
 
 .form-group {
@@ -38,55 +57,66 @@ p {
 
 input {
     width: 100%;
-    padding: 8px;
-    margin-bottom: 8px;
-    border: 1px solid #ccc;
+    padding: 10px 12px;
+    margin-bottom: 12px;
+    background-color: #212121;
+    border: 1px solid #303030;
     border-radius: 4px;
     box-sizing: border-box;
+    color: #FFFFFF;
+    font-size: 14px;
 }
 
-input[type="submit"] {
-    background-color: #4CAF50;
-    color: white;
-    border: none;
-    cursor: pointer;
-}
-
-input[type="submit"]:hover {
-    background-color: #45a049;
+input:focus {
+    outline: none;
+    border-color: #3EA6FF; /* YouTube blue */
 }
 
 button {
-    background-color: #d00;
-    color: white;
+    background-color: #3EA6FF; /* YouTube blue */
+    color: #0F0F0F;
     border: none;
-    padding: 8px 12px;
-    border-radius: 4px;
+    padding: 10px 16px;
+    border-radius: 18px;
     cursor: pointer;
-    font-weight: bold;
+    font-weight: 500;
+    font-size: 14px;
+    transition: background-color 0.2s;
 }
 
 button:hover {
-    background-color: #b00;
+    background-color: #65B8FF; /* Lighter blue */
+}
+
+.primary-button {
+    background-color: #FF0000; /* YouTube red */
+    color: white;
+}
+
+.primary-button:hover {
+    background-color: #CC0000; /* Darker red */
 }
 
 .small-button {
-    padding: 4px 8px;
+    padding: 6px 10px;
     font-size: 12px;
     margin-left: 8px;
+    border-radius: 14px;
 }
 
 .message {
-    color: #d00;
+    color: #FF0000;
     font-size: 12px;
     min-height: 16px;
+    margin-top: 8px;
 }
 
 .status {
-    background-color: #f0f0f0;
-    padding: 10px;
-    border-radius: 4px;
+    background-color: #212121;
+    padding: 12px;
+    border-radius: 8px;
     margin: 12px 0;
+    border: 1px solid #303030;
 }
 
 .status-item {
@@ -96,47 +126,72 @@ button:hover {
 }
 
 .label {
-    font-weight: bold;
+    font-weight: 500;
     width: 70px;
+    color: #AAAAAA;
 }
 
 .value {
     flex-grow: 1;
+    color: #FFFFFF;
 }
 
 ol {
     margin-left: -10px;
     font-size: 14px;
+    color: #AAAAAA;
+    padding-left: 24px;
 }
 
 li {
-    margin-bottom: 5px;
+    margin-bottom: 6px;
 }
 
-.result {
-    margin-top: 20px;
-    padding: 10px;
-    background-color: #e7f3fe;
-    border-left: 6px solid #2196F3;
-    color: #31708f;
+a {
+    color: #3EA6FF; /* YouTube blue */
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
 }
 
 .socials {
     margin-top: 20px;
     padding-top: 15px;
-    border-top: 1px solid #eee;
+    border-top: 1px solid #303030;
 }
 
 .social-links {
     display: flex;
     gap: 10px;
+    margin-top: 8px;
 }
 
-social-links a {
-    color: #d00;
-    text-decoration: none;
+.social-icon {
+    display: flex;
+    align-items: center;
+    color: #AAAAAA;
+    font-size: 14px;
 }
 
-.social-links a:hover {
-    text-decoration: underline;
+.social-icon svg {
+    margin-right: 4px;
+}
+
+.social-icon:hover {
+    color: #3EA6FF;
+}
+
+#result-container {
+    margin-top: 12px;
+    padding: 12px;
+    border: 1px solid #303030;
+    border-radius: 8px;
+    background-color: #212121;
+    max-height: 200px;
+    overflow-y: auto;
+    font-size: 14px;
+    line-height: 1.4;
+    color: #FFFFFF;
 }

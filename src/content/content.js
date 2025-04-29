@@ -25,7 +25,6 @@ const observer = new MutationObserver(() => {
         }
     } 
     
-    // If we're on a shorts page but icon isn't added yet, try to add it
     // This helps when navigating between shorts without URL change
     if (isYouTubeShorts(window.location.href) && !iconAdded) {
         setTimeout(addAnalyzeIcon, 1000);
@@ -69,7 +68,7 @@ function addAnalyzeIcon() {
     analyzeButton.style.position = 'fixed';
     analyzeButton.style.bottom = '80px';
     analyzeButton.style.right = '20px';
-    analyzeButton.style.backgroundColor = '#FF0000'; // YouTube red
+    analyzeButton.style.backgroundColor = '#FF0000';
     analyzeButton.style.color = 'white';
     analyzeButton.style.width = '40px';
     analyzeButton.style.height = '40px';
@@ -310,7 +309,7 @@ const displayResult = (result) => {
     const title = document.createElement('div');
     title.style.fontWeight = '500';
     title.style.marginBottom = '12px';
-    title.style.color = '#FF0000'; // YouTube red
+    title.style.color = '#FF0000';
     title.style.display = 'flex';
     title.style.alignItems = 'center';
     title.style.fontSize = '16px';
@@ -402,7 +401,7 @@ const displayError = (errorMessage) => {
     const errorTitle = document.createElement('div');
     errorTitle.style.fontWeight = '500';
     errorTitle.style.marginBottom = '10px';
-    errorTitle.style.color = '#FF0000'; // YouTube red
+    errorTitle.style.color = '#FF0000'; 
     errorTitle.style.display = 'flex';
     errorTitle.style.alignItems = 'center';
     errorTitle.innerHTML = `
@@ -422,7 +421,7 @@ const displayError = (errorMessage) => {
     // YouTube-style retry button
     const retryButton = document.createElement('button');
     retryButton.textContent = 'Try Again';
-    retryButton.style.backgroundColor = '#3EA6FF'; // YouTube blue button
+    retryButton.style.backgroundColor = '#3EA6FF';
     retryButton.style.color = '#0F0F0F';
     retryButton.style.border = 'none';
     retryButton.style.padding = '8px 12px';
@@ -434,11 +433,11 @@ const displayError = (errorMessage) => {
     retryButton.style.fontFamily = '"YouTube Sans", "Roboto", sans-serif';
     
     retryButton.addEventListener('mouseover', () => {
-        retryButton.style.backgroundColor = '#65B8FF'; // Lighter blue on hover
+        retryButton.style.backgroundColor = '#65B8FF'; 
     });
     
     retryButton.addEventListener('mouseout', () => {
-        retryButton.style.backgroundColor = '#3EA6FF'; // Back to normal blue
+        retryButton.style.backgroundColor = '#3EA6FF';
     });
     
     retryButton.addEventListener('click', () => {
@@ -476,7 +475,7 @@ const displayError = (errorMessage) => {
         errorContainer.remove();
     });
     
-    errorContainer.style.position = 'relative'; // For absolute positioning of close button
+    errorContainer.style.position = 'relative';
     errorContainer.appendChild(closeButton);
     errorContainer.appendChild(errorTitle);
     errorContainer.appendChild(errorContent);

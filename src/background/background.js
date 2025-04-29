@@ -1,4 +1,3 @@
-// Background script that handles authentication and API calls
 
 const DEBUG = true;
 function debugLog(...args) {
@@ -9,8 +8,6 @@ debugLog("Background service worker loaded");
 
 const AUTH_TOKEN_KEY = 'aimlapi_key';
 
-// ===== API Service functions (moved from separate file) =====
-// Instead of importing from a separate file, we include the functions directly here
 const identifyEpisodeWithGemini = async (videoInfo, apiKey) => {
     if (!apiKey) {
         throw new Error('No API key provided');
@@ -106,7 +103,6 @@ If you can't determine the exact episode, provide your best guess based on avail
     }
 };
 
-// ===== Background script message handlers =====
 // Listen for messages from content script
 chrome.runtime.onInstalled.addListener(() => {
     console.log('YouTube Shorts Identifier extension installed.');
