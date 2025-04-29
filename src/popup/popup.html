@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube Shorts Identifier</title>
+    <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+    <div class="container">
+        <div id="setup-view" style="display: none;">
+            <h2>Welcome to YouTube Shorts Identifier</h2>
+            <p>To use this extension, you need a Google Gemini API key.</p>
+            
+            <ol>
+                <li>Go to <a href="https://makersuite.google.com/app/apikey" target="_blank">Google AI Studio</a></li>
+                <li>Create or sign in to your Google account</li>
+                <li>Get your API key</li>
+                <li>Paste it below</li>
+            </ol>
+            
+            <div class="form-group">
+                <input type="text" id="api-key" placeholder="Paste your Gemini API key here" />
+                <button id="save-key">Save API Key</button>
+            </div>
+            <p id="setup-message" class="message"></p>
+        </div>
+        
+        <div id="main-view" style="display: none;">
+            <h2>YouTube Shorts Identifier</h2>
+            <p>Visit a YouTube Shorts video to identify which episode it's from!</p>
+            
+            <div class="status">
+                <div class="status-item">
+                    <span class="label">Status:</span>
+                    <span id="status" class="value">Ready</span>
+                </div>
+                <div class="status-item">
+                    <span class="label">API Key:</span>
+                    <span id="api-status" class="value">Active</span>
+                    <button id="change-key" class="small-button">Change</button>
+                </div>
+            </div>
+            
+            <div id="instructions">
+                <h3>How to use:</h3>
+                <ol>
+                    <li>Navigate to a YouTube Shorts video</li>
+                    <li>The extension will automatically analyze the video</li>
+                    <li>Results will appear at the bottom of the video</li>
+                </ol>
+            </div>
+        </div>
+        
+        <div class="socials">
+            <h4>Follow the Developer</h4>
+            <div class="social-links">
+                <a href="https://twitter.com/yourusername" target="_blank">Twitter</a>
+                <a href="https://github.com/yourusername" target="_blank">GitHub</a>
+                <a href="https://www.youtube.com/@yourusername" target="_blank">YouTube</a>
+            </div>
+        </div>
+    </div>
+    <script src="popup.js"></script>
+</body>
+</html>

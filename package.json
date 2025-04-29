@@ -1,0 +1,26 @@
+{
+  "name": "youtube-shorts-identifier",
+  "version": "1.0.0",
+  "description": "A Chrome extension to identify episodes from YouTube Shorts using Google's Gemini.",
+  "main": "src/background/background.js",
+  "scripts": {
+    "build": "echo 'Build script not defined'",
+    "test": "echo 'Test script not defined'"
+  },
+  "keywords": [
+    "chrome",
+    "extension",
+    "youtube",
+    "shorts",
+    "gemini"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "dependencies": {
+    "axios": "^0.21.1"
+  },
+  "devDependencies": {
+    "webpack": "^5.0.0",
+    "webpack-cli": "^4.0.0"
+  }
+}
