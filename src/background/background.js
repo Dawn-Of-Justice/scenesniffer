@@ -76,19 +76,34 @@ const identifyEpisodeWithGemini = async (videoInfo, apiKey) => {
                     parts: [
                         // Second user turn is the text prompt
                         { 
-                            text: `Which episode is this?
+                            text: `What is this content?
                             
 Title: "${videoInfo.title}"
 ${videoInfo.description ? `Description: "${videoInfo.description}"` : ''}
 ${videoInfo.channel ? `Channel: "${videoInfo.channel}"` : ''}
 ${videoInfo.url ? `URL: ${videoInfo.url}` : ''}
 
-Please identify which TV show episode this clip is from:
+Please identify what this clip is from:
+First start by identifying if it's a TV show episode, a movie or a random video.
+then based on that, each field must be answered following the format below:
+
+If it's a TV SHOW episode:
 - Show name
 - Season number
 - Episode number
 - Episode title
-- Brief explanation`
+- Brief explanation
+
+If it's a MOVIE:
+- Movie title
+- Release year
+- Director (if known)
+- Brief explanation
+
+If it's NEITHER a TV show nor a movie, or you can't identify it:
+- Brief explanation of what you can see
+- Clearly state that you cannot identify it as a specific show or movie
+Do not make the response too long, just give the most relevant information.`
                         }
                     ]
                 }

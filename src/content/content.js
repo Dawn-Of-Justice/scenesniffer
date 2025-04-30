@@ -416,19 +416,21 @@ const displayResult = (result) => {
     const resultContainer = document.createElement('div');
     resultContainer.id = 'shorts-identifier-result';
     
-    // Apply YouTube-style card
+    // Apply YouTube-style card first
     styleYouTubeCard(resultContainer);
     
-    // Ensure positioning is correct by explicitly setting these again after all styling
-    // Using setProperty with !important to ensure it overrides other styles
-    resultContainer.style.setProperty('position', 'fixed', 'important');
-    resultContainer.style.setProperty('bottom', '130px', 'important');
-    resultContainer.style.setProperty('right', '20px', 'important');
-    
+    // Override flex display to allow for better content organization
+    resultContainer.style.display = 'block';
     resultContainer.style.maxWidth = '320px';
     resultContainer.style.maxHeight = '300px';
     resultContainer.style.overflowY = 'auto';
+    resultContainer.style.padding = '16px';
     resultContainer.style.animation = 'scenecope-fade-in 0.3s ease-in-out';
+    
+    // Ensure positioning is correct by explicitly setting these again after all styling
+    resultContainer.style.setProperty('position', 'fixed', 'important');
+    resultContainer.style.setProperty('bottom', '130px', 'important');
+    resultContainer.style.setProperty('right', '20px', 'important');
     
     // Add a style for fade-in animation
     const styleEl = document.createElement('style');
@@ -437,37 +439,75 @@ const displayResult = (result) => {
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
         }
+        @keyframes scenecope-spin {
+            to { transform: rotate(360deg); }
+        }
     `;
     document.head.appendChild(styleEl);
     
-    // YouTube-style header
+    // YouTube-style header with icon
     const title = document.createElement('div');
     title.style.fontWeight = '500';
-    title.style.marginBottom = '12px';
+    title.style.marginBottom = '14px';
     title.style.color = '#FF0000';
     title.style.display = 'flex';
     title.style.alignItems = 'center';
-    title.style.fontSize = '16px';
+    title.style.fontSize = '15px';
     title.innerHTML = `
-        <svg xmlns="http://www.w3.org/2000/svg" height="20" width="20" viewBox="0 0 24 24" fill="currentColor" style="margin-right: 8px;">
-            <path d="M20 6h-5.586l2.293-2.293-1.414-1.414L12 5.586 8.707 2.293 7.293 3.707 9.586 6H4c-1.103 0-2 .897-2 2v10c0 1.103.897 2 2 2h16c1.103 0 2-.897 2-2V8c0-1.103-.897-2-2-2z"/>
-            <path d="M4 16h16V8H4v8zm7-6h2v2h-2v-2z"/>
+        <svg xmlns="http://www.w3.org/2000/svg" height="18" width="18" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M20 6h-5.586l2.293-2.293-1.414-1.414L12 5.586 8.707 2.293 7.293 3.707 9.586 6H4c-1.103 0-2 .897-2 2v10c0 1.103.897 2 2 2h16c1.103 0 2-.897 2-2V8c0-1.103-.897-2-2-2zM4 18V8h16l.002 10H4z"/>
+            <path d="M15.5 11c-1.379 0-2.5 1.121-2.5 2.5s1.121 2.5 2.5 2.5 2.5-1.121 2.5-2.5-1.121-2.5-2.5-2.5zm0 4c-.827 0-1.5-.673-1.5-1.5s.673-1.5 1.5-1.5 1.5.673 1.5 1.5-.673 1.5-1.5 1.5z"/>
+            <path d="M9 15h2v2H9z"/>
         </svg>
-        Episode Identified
+        <span style="font-weight:600;">SceneSniffer</span>
     `;
     
     // Content styling with YouTube-like formatting
     const content = document.createElement('div');
+    content.style.fontSize = '14px';
+    content.style.color = '#FFFFFF';
+    content.style.lineHeight = '1.5';
+    content.style.marginTop = '6px';
     
     // Parse the result and make it more YouTube-like
     const formattedResult = result
-        .replace(/Show name:/gi, '<strong style="color:#AAAAAA">Show name:</strong>')
-        .replace(/Season number:/gi, '<strong style="color:#AAAAAA">Season:</strong>')
-        .replace(/Episode number:/gi, '<strong style="color:#AAAAAA">Episode:</strong>')
-        .replace(/Episode title:/gi, '<strong style="color:#AAAAAA">Title:</strong>')
-        .replace(/Brief explanation:/gi, '<strong style="color:#AAAAAA">Explanation:</strong>');
+        // First convert any markdown bold/italic formatting
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.*?)\*/g, '<em>$1</em>')
         
-    content.innerHTML = formattedResult.replace(/\n/g, '<br>');
+        // Check if we already have bullet points
+        .replace(/•\s+/g, '') // Remove existing bullets
+        
+        // TV Show format replacements
+        .replace(/Show name:/gi, '<strong style="color:#AAAAAA">Show name:</strong> ')
+        .replace(/Season number:/gi, '<strong style="color:#AAAAAA">Season:</strong> ')
+        .replace(/Season:/gi, '<strong style="color:#AAAAAA">Season:</strong> ')
+        .replace(/Episode number:/gi, '<strong style="color:#AAAAAA">Episode:</strong> ')
+        .replace(/Episode:/gi, '<strong style="color:#AAAAAA">Episode:</strong> ')
+        .replace(/Episode title:/gi, '<strong style="color:#AAAAAA">Title:</strong> ')
+        
+        // Movie format replacements
+        .replace(/Movie title:/gi, '<strong style="color:#AAAAAA">Movie:</strong> ')
+        .replace(/Release year:/gi, '<strong style="color:#AAAAAA">Year:</strong> ')
+        .replace(/Director:/gi, '<strong style="color:#AAAAAA">Director:</strong> ')
+        
+        // Content type for unidentified content
+        .replace(/Content type:/gi, '<strong style="color:#AAAAAA">Content type:</strong> ')
+        
+        // Common replacements
+        .replace(/Brief explanation:/gi, '<strong style="color:#AAAAAA">Explanation:</strong> ')
+        
+        // Remove any standalone asterisks
+        .replace(/^\s*\*\s*/gm, '');
+
+    // Create a compact display with minimal spacing between items
+    const lines = formattedResult.split('\n');
+    const filteredLines = lines
+        .map(line => line.trim()) // Trim each line
+        .filter(line => line !== ''); // Remove empty lines
+
+    // Join with minimal spacing - no double breaks
+    content.innerHTML = filteredLines.join('<br>');
     
     // Add YouTube-style close button
     const closeButton = document.createElement('div');
@@ -508,8 +548,6 @@ const displayResult = (result) => {
             to { opacity: 0; transform: translateY(10px); }
         }
     `;
-    
-    // The close button can be absolutely positioned within a fixed container too
     
     resultContainer.appendChild(closeButton);
     resultContainer.appendChild(title);

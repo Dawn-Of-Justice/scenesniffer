@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube Video Details</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom styles if needed */
+        body {
+            font-family: 'Inter', sans-serif; /* Using Inter font */
+        }
+        .result-item {
+            word-break: break-word; /* Prevent long text from overflowing */
+        }
+    </style>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
+
+    <div class="bg-white p-6 md:p-8 rounded-lg shadow-lg w-full max-w-2xl">
+        <h1 class="text-2xl md:text-3xl font-bold mb-6 text-center text-gray-800">Fetch YouTube Video Details</h1>
+
+        <div class="mb-6">
+            <label for="youtubeUrl" class="block text-sm font-medium text-gray-700 mb-2">Enter YouTube Video URL:</label>
+            <input type="url" id="youtubeUrl" placeholder="e.g., https://www.youtube.com/watch?v=dQw4w9WgXcQ" class="w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out">
+        </div>
+
+        <div class="text-center mb-6">
+            <button id="fetchButton" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-md shadow-md transition duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                Fetch Details
+            </button>
+        </div>
+
+        <div id="loading" class="text-center text-gray-500 hidden my-4">
+            <svg class="animate-spin h-5 w-5 text-blue-500 inline-block mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            Loading...
+        </div>
+
+        <div id="error" class="text-center text-red-600 font-medium hidden my-4 p-3 bg-red-100 rounded-md"></div>
+
+        <div id="results" class="mt-6 border-t border-gray-200 pt-6 space-y-4 hidden">
+            <h2 class="text-xl font-semibold text-gray-700 mb-4">Video Details:</h2>
+            <div class="result-item"><strong>Title:</strong> <span id="title" class="text-gray-800"></span></div>
+            <div class="result-item"><strong>Author:</strong> <span id="author" class="text-gray-800"></span></div>
+            <div class="result-item"><strong>Provider:</strong> <span id="provider" class="text-gray-800"></span></div>
+            <div class="mt-4">
+                <strong class="block mb-2">Thumbnail:</strong>
+                <img id="thumbnail" src="" alt="Video Thumbnail" class="max-w-xs w-full h-auto rounded-md shadow-md mx-auto" onerror="this.onerror=null; this.src='https://placehold.co/400x225/cccccc/ffffff?text=Thumbnail+Not+Found'; this.alt='Thumbnail loading failed';">
+            </div>
+             <div class="mt-4">
+                <strong class="block mb-2">Embed Code:</strong>
+                <div id="embedCode" class="aspect-w-16 aspect-h-9">
+                    </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const fetchButton = document.getElementById('fetchButton');
+        const youtubeUrlInput = document.getElementById('youtubeUrl');
+        const resultsDiv = document.getElementById('results');
+        const loadingDiv = document.getElementById('loading');
+        const errorDiv = document.getElementById('error');
+
+        // Result display elements
+        const titleEl = document.getElementById('title');
+        const authorEl = document.getElementById('author');
+        const providerEl = document.getElementById('provider');
+        const thumbnailEl = document.getElementById('thumbnail');
+        const embedCodeDiv = document.getElementById('embedCode');
+
+        fetchButton.addEventListener('click', fetchVideoDetails);
+        youtubeUrlInput.addEventListener('keypress', (event) => {
+            // Allow fetching by pressing Enter key in the input field
+            if (event.key === 'Enter') {
+                fetchVideoDetails();
+            }
+        });
+
+        async function fetchVideoDetails() {
+            const videoUrl = youtubeUrlInput.value.trim();
+
+            // Basic URL validation
+            if (!videoUrl || !isValidHttpUrl(videoUrl) || !videoUrl.includes('youtube.com') && !videoUrl.includes('youtu.be')) {
+                showError('Please enter a valid YouTube video URL.');
+                return;
+            }
+
+            // Construct the oEmbed API URL
+            // Using a CORS proxy because the oEmbed endpoint might not have permissive CORS headers
+            // You might need to find or host your own CORS proxy for reliable use.
+            // Example proxy: 'https://cors-anywhere.herokuapp.com/' (may have limitations)
+            // For this example, we'll try a direct fetch first, but be aware it might fail in some browser contexts.
+            const oEmbedUrl = `https://www.youtube.com/oembed?url=${encodeURIComponent(videoUrl)}&format=json`;
+            // const proxyOembedUrl = `https://cors-anywhere.herokuapp.com/${oEmbedUrl}`; // Example using a proxy
+
+            // Reset UI state
+            hideError();
+            resultsDiv.classList.add('hidden');
+            loadingDiv.classList.remove('hidden');
+            fetchButton.disabled = true;
+
+            try {
+                // Fetch data from the oEmbed endpoint
+                // Note: Direct fetch might be blocked by CORS policy in a browser.
+                // A server-side request or a CORS proxy is often required.
+                const response = await fetch(oEmbedUrl);
+
+                if (!response.ok) {
+                    // Handle non-successful responses (e.g., 404 Not Found, 401 Unauthorized for private videos)
+                     if (response.status === 404) {
+                        throw new Error(`Video not found or oEmbed endpoint unavailable for this URL (Status: ${response.status})`);
+                    } else if (response.status === 401 || response.status === 403) {
+                         throw new Error(`Cannot access details for this video (perhaps it's private or unavailable?). Status: ${response.status}`);
+                    } else {
+                        throw new Error(`Failed to fetch video details. Status: ${response.status}`);
+                    }
+                }
+
+                const data = await response.json();
+
+                // Display the fetched data
+                displayResults(data);
+
+            } catch (error) {
+                console.error('Error fetching video details:', error);
+                // Check if the error is due to CORS
+                if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
+                     showError('Could not fetch details. This might be due to browser CORS restrictions. Try using a server-side solution or a CORS proxy.');
+                } else {
+                    showError(error.message || 'An unexpected error occurred.');
+                }
+            } finally {
+                // Re-enable button and hide loading indicator
+                loadingDiv.classList.add('hidden');
+                fetchButton.disabled = false;
+            }
+        }
+
+        function displayResults(data) {
+            titleEl.textContent = data.title || 'N/A';
+            authorEl.textContent = data.author_name || 'N/A';
+            providerEl.textContent = data.provider_name || 'N/A';
+
+            // Set thumbnail URL and add error handling for the image
+            thumbnailEl.src = data.thumbnail_url || 'https://placehold.co/400x225/cccccc/ffffff?text=No+Thumbnail';
+            thumbnailEl.alt = data.title ? `${data.title} Thumbnail` : 'Video Thumbnail';
+
+            // Display the embed HTML (contains the iframe)
+            if (data.html) {
+                // Ensure the container adjusts size for the embedded player
+                // The Tailwind aspect-ratio plugin helps maintain video proportions
+                embedCodeDiv.innerHTML = data.html;
+                // Make the iframe responsive if possible (oEmbed sometimes includes fixed sizes)
+                const iframe = embedCodeDiv.querySelector('iframe');
+                if (iframe) {
+                    iframe.classList.add('absolute', 'top-0', 'left-0', 'w-full', 'h-full');
+                    iframe.style.width = '100%'; // Ensure width is responsive
+                    iframe.style.height = '100%'; // Ensure height is responsive
+                }
+            } else {
+                embedCodeDiv.innerHTML = '<p class="text-gray-500">Embed code not available.</p>';
+            }
+
+
+            resultsDiv.classList.remove('hidden');
+        }
+
+        function showError(message) {
+            errorDiv.textContent = message;
+            errorDiv.classList.remove('hidden');
+            resultsDiv.classList.add('hidden'); // Hide results if error occurs
+        }
+
+        function hideError() {
+            errorDiv.classList.add('hidden');
+            errorDiv.textContent = '';
+        }
+
+        // Helper function to validate URL format
+        function isValidHttpUrl(string) {
+            let url;
+            try {
+                url = new URL(string);
+            } catch (_) {
+                return false;
+            }
+            return url.protocol === "http:" || url.protocol === "https:";
+        }
+
+    </script>
+
+</body>
+</html>
