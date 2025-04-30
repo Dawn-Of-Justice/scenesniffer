@@ -119,4 +119,16 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         });
     }
+
+    // Handle back button functionality
+    const backButton = document.getElementById('back-button');
+    if (backButton) {
+        backButton.addEventListener('click', function() {
+            // Hide setup view
+            document.getElementById('setup-view').style.display = 'none';
+            
+            // Show main view
+            document.getElementById('main-view').style.display = 'block';
+        });
+    }
 });

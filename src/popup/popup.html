@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>YT Scenecope</title>
+    <title>SceneSniffer</title>
     <link rel="stylesheet" href="popup.css">
 </head>
 <body>
@@ -16,24 +16,33 @@
                     <path d="M15.5 11c-1.379 0-2.5 1.121-2.5 2.5s1.121 2.5 2.5 2.5 2.5-1.121 2.5-2.5-1.121-2.5-2.5-2.5zm0 4c-.827 0-1.5-.673-1.5-1.5s.673-1.5 1.5-1.5 1.5.673 1.5 1.5-.673 1.5-1.5 1.5z"/>
                     <path d="M9 15h2v2H9z"/>
                 </svg>
-                YT Scenecope
+                SceneSniffer
             </div>
         </div>
         
         <!-- API Key Setup View -->
         <div id="setup-view" style="display: none;">
-            <h2>Welcome to YT Scenecope</h2>
-            <p>To use this extension, you need an AIMLAPI key.</p>
+            <!-- Back arrow in header -->
+            <div class="header-with-back">
+                <button id="back-button" class="back-arrow-button">
+                    <svg xmlns="http://www.w3.org/2000/svg" height="18" width="18" viewBox="0 0 24 24" fill="#AAAAAA">
+                        <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
+                    </svg>
+                </button>
+                <h2 style="margin-left: -18px;">Welcome to SceneSniffer</h2>
+            </div>
+            
+            <p>To use this extension, you need a Google Gemini API key.</p>
             
             <ol>
-                <li>Go to <a href="https://aimlapi.com" target="_blank">AIMLAPI.com</a></li>
-                <li>Create an account or sign in</li>
-                <li>Get your API key from the dashboard</li>
+                <li>Go to <a href="https://ai.google.dev/" target="_blank">Google AI Studio</a></li>
+                <li>Create an account or sign in with your Google account</li>
+                <li>Get your API key from the API Keys section</li>
                 <li>Paste it below</li>
             </ol>
             
             <div class="form-group">
-                <input type="text" id="api-key" placeholder="Paste your API key here" />
+                <input type="text" id="api-key" placeholder="Paste your Gemini API key here" />
                 <button id="save-key" class="primary-button">Save API Key</button>
             </div>
             <p id="setup-message" class="message"></p>
@@ -41,7 +50,7 @@
         
         <!-- Main Extension View -->
         <div id="main-view" style="display: none;">
-            <h2>Identify TV Show Scenes</h2>
+            <h2>Identify TV Show Scenes/episodes </h2>
             
             <div class="status">
                 <div class="status-item">

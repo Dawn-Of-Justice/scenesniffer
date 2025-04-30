@@ -1,12 +1,11 @@
-
 const DEBUG = true;
 function debugLog(...args) {
-    if (DEBUG) console.log("[YT Scenecope BG]", ...args);
+    if (DEBUG) console.log("[SceneSniffer BG]", ...args);
 }
 
 debugLog("Background service worker loaded");
 
-const AUTH_TOKEN_KEY = 'aimlapi_key';
+const AUTH_TOKEN_KEY = 'gemini_api_key';
 
 const identifyEpisodeWithGemini = async (videoInfo, apiKey) => {
     if (!apiKey) {
@@ -14,91 +13,149 @@ const identifyEpisodeWithGemini = async (videoInfo, apiKey) => {
     }
     
     try {
-        debugLog("Sending request to AI API for video:", videoInfo.url);
+        debugLog("Sending request to Gemini API for video:", videoInfo.url);
         
-        // Call Gemini via AIMLAPI with OpenAI-compatible interface
-        const response = await fetch('https://api.aimlapi.com/v1/chat/completions', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${apiKey}`
-            },
-            body: JSON.stringify({
-                model: 'google/gemini-2.5-pro-preview',
-                messages: [
-                    {
-                        role: 'system',
-                        content: 'You are a TV show expert who can identify episodes based on YouTube Shorts clips.'
-                    },
-                    {
-                        role: 'user',
-                        content: `I'm watching a YouTube Shorts video with these details:
-                        
+        // Setup generation config - IDENTICAL to your Google AI Studio sample
+        const generationConfig = {
+            temperature: 1,
+            topP: 0.95,
+            topK: 40,
+            maxOutputTokens: 8192,
+            responseMimeType: 'text/plain',
+        };
+        
+        // Get YouTube video thumbnail
+        const videoId = extractVideoId(videoInfo.url);
+        let thumbnailData = null;
+        
+        // Try to get the thumbnail image data
+        if (videoId) {
+            try {
+                // Try multiple thumbnail formats in case maxresdefault isn't available
+                const thumbnailFormats = [
+                    `https://i.ytimg.com/vi/${videoId}/maxresdefault.jpg`,
+                    `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`,
+                    `https://i.ytimg.com/vi/${videoId}/mqdefault.jpg`
+                ];
+                
+                // Try each thumbnail format until one works
+                for (const thumbnailUrl of thumbnailFormats) {
+                    const response = await fetch(thumbnailUrl);
+                    if (response.ok) {
+                        const blob = await response.blob();
+                        thumbnailData = await blobToBase64(blob);
+                        break; // Exit loop once we have a thumbnail
+                    }
+                }
+            } catch (e) {
+                debugLog("Failed to get thumbnail:", e);
+                // Continue without image if we can't get it
+            }
+        }
+        
+        // Build request following the EXACT structure from the Google AI Studio example
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+        
+        // Follow the structure of the example with two consecutive user turns
+        const requestBody = {
+            generationConfig,
+            contents: [
+                {
+                    role: 'user',
+                    parts: [
+                        // First user turn is just the image
+                        ...(thumbnailData ? [{
+                            inlineData: {
+                                data: thumbnailData,
+                                mimeType: "image/jpeg"
+                            }
+                        }] : [])
+                    ]
+                },
+                {
+                    role: 'user',
+                    parts: [
+                        // Second user turn is the text prompt
+                        { 
+                            text: `Which episode is this?
+                            
 Title: "${videoInfo.title}"
 ${videoInfo.description ? `Description: "${videoInfo.description}"` : ''}
 ${videoInfo.channel ? `Channel: "${videoInfo.channel}"` : ''}
 ${videoInfo.url ? `URL: ${videoInfo.url}` : ''}
 
-Based on this information, identify which TV show episode this clip is from.
-Provide:
+Please identify which TV show episode this clip is from:
 - Show name
 - Season number
 - Episode number
 - Episode title
-- Brief explanation
+- Brief explanation`
+                        }
+                    ]
+                }
+            ]
+        };
 
-If you can't determine the exact episode, provide your best guess based on available information.`
-                    }
-                ]
-            })
-        });
-
+        // Add retry mechanism for reliability
+        let retries = 3;
+        let response = null;
+        
+        while (retries > 0) {
+            try {
+                response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(requestBody)
+                });
+                
+                break; // Success, exit retry loop
+            } catch (error) {
+                retries--;
+                if (retries === 0) throw error;
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                debugLog(`Retrying API call, ${retries} attempts remaining`);
+            }
+        }
+        
         if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(`API error: ${errorData.error?.message || response.statusText}`);
+            let errorData;
+            try {
+                errorData = await response.json();
+            } catch (e) {
+                errorData = { error: { message: `HTTP error ${response.status}` } };
+            }
+            throw new Error(`API error: ${errorData.error?.message || response.statusText || 'Unknown error'}`);
         }
 
-        // Add detailed response inspection
         const data = await response.json();
         debugLog("Full API response:", data);
 
-        // Check the choices array more thoroughly
-        if (data.choices && data.choices.length > 0) {
-            debugLog("First choice:", data.choices[0]);
+        // Extract content
+        if (data.candidates && data.candidates.length > 0 && 
+            data.candidates[0].content) {
             
-            // Handle different response formats
-            if (data.choices[0].message && data.choices[0].message.content) {
-                // OpenAI-style format
-                return {
-                    result: data.choices[0].message.content,
-                    raw: data
-                };
-            } else if (data.choices[0].text) {
-                // Alternative format
-                return {
-                    result: data.choices[0].text,
-                    raw: data
-                };
-            } else if (data.choices[0].content) {
-                // Another possible format
-                return {
-                    result: data.choices[0].content,
-                    raw: data
-                };
+            let resultText = '';
+            if (data.candidates[0].content.parts && data.candidates[0].content.parts.length > 0) {
+                resultText = data.candidates[0].content.parts[0].text;
+            } else if (data.candidates[0].content.text) {
+                resultText = data.candidates[0].content.text;
             } else {
-                // No content found in any expected location
-                debugLog("Choice exists but no content found in expected locations");
-                
-                if (data.usage && data.usage.completion_tokens === 0) {
-                    throw new Error("The AI model didn't generate any text. This might be due to content restrictions or insufficient context.");
-                }
+                debugLog("Found candidates but couldn't extract text:", data.candidates[0]);
+                resultText = "Couldn't extract text from the API response";
             }
+            
+            return {
+                result: resultText,
+                raw: data
+            };
         } else {
-            // No choices in response
-            debugLog("No choices in response");
+            debugLog("Unexpected response format:", data);
+            throw new Error("Unexpected response format from Gemini API");
         }
     } catch (error) {
-        debugLog('Error calling AI API:', error);
+        debugLog('Error calling Gemini API:', error);
         throw error;
     }
 };
@@ -108,8 +165,22 @@ chrome.runtime.onInstalled.addListener(() => {
     console.log('YouTube Shorts Identifier extension installed.');
 });
 
+// Add this function to the background.js file to properly handle errors
+function handleRuntimeError(callback) {
+    if (chrome.runtime.lastError) {
+        console.error("Runtime error:", chrome.runtime.lastError);
+        return callback({ error: chrome.runtime.lastError.message });
+    }
+    return false;
+}
+
+// Update the message listener to use this handler
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     debugLog("Received message:", request);
+    
+    if (handleRuntimeError(sendResponse)) {
+        return true;
+    }
     
     if (request.action === 'identifyEpisode') {
         debugLog("Processing identify episode request");
@@ -122,7 +193,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             })
             .catch(error => {
                 debugLog("Error getting episode info:", error);
-                sendResponse({ error: error.message });
+                sendResponse({ error: error.message || "Unknown error occurred" });
             });
         
         return true; // Required for async response
@@ -212,4 +283,18 @@ function extractVideoId(url) {
     // Extract YouTube video ID from various URL formats
     const match = url.match(/(?:shorts\/|v=|youtu.be\/)([^?&]+)/);
     return match ? match[1] : null;
+}
+
+// Add this utility function to convert blob to base64 string
+function blobToBase64(blob) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            // Extract the base64 data part from the data URL
+            const base64data = reader.result.split(',')[1];
+            resolve(base64data);
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+    });
 }

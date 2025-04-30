@@ -1,7 +1,7 @@
 // Debug mode
 const DEBUG = true;
 function debugLog(...args) {
-    if (DEBUG) console.log("[YT Scenecope Content]", ...args);
+    if (DEBUG) console.log("[SceneSniffer Content]", ...args);
 }
 
 debugLog("Content script loaded");
@@ -119,69 +119,237 @@ function removeAnalyzeIcon() {
 }
 
 // Process the current video when button is clicked
-function analyzeCurrentVideo() {
-    debugLog("Analyzing current video");
-    
-    // Show loading indicator
-    displayLoadingState();
-    
-    // Extract video information
-    const episodeInfo = extractEpisodeInfo();
-    debugLog("Extracted info:", episodeInfo);
-    
-    if (episodeInfo) {
-        sendEpisodeInfoToBackground(episodeInfo);
-    } else {
-        displayError("Could not extract video information");
-    }
+// Replace the analyzeCurrentVideo function
+async function analyzeCurrentVideo() {
+  try {
+      debugLog("Analyzing current video");
+      
+      // Show loading indicator
+      displayLoadingState();
+      
+      // Extract video information with better error handling
+      const episodeInfo = extractEpisodeInfo();
+      debugLog("Extracted info:", episodeInfo);
+      
+      if (episodeInfo) {
+          try {
+              const response = await safeSendMessage({
+                  action: 'identifyEpisode',
+                  data: episodeInfo
+              });
+              
+              if (response.error) {
+                  displayError(`Error: ${response.error}`);
+                  return;
+              }
+              
+              if (response.result) {
+                  displayResult(response.result);
+                  return;
+              }
+              
+              displayError("Couldn't identify this episode. Try another video.");
+          } catch (error) {
+              debugLog("Error sending data to background script:", error);
+              
+              // Check for specific errors
+              if (error.message && error.message.includes("Extension context invalidated")) {
+                  showNotification('Extension was updated. Please refresh the page and try again.', 'error', true);
+              } else {
+                  displayError(`Error: ${error.message || 'Communication with extension failed'}`);
+              }
+          }
+      } else {
+          displayError("Could not extract video information");
+      }
+  } catch (e) {
+      debugLog("Error in analyzeCurrentVideo:", e);
+      showNotification(`Error analyzing video: ${e.message}`, 'error');
+      displayError("Unexpected error occurred. Please try again.");
+  }
 }
 
-// Improved extraction function for YouTube Shorts
 function extractEpisodeInfo() {
     try {
-        // More comprehensive selector set for title
-        const videoTitle = 
-            document.querySelector('h2.title')?.innerText || 
-            document.querySelector('[id="title"]')?.innerText ||
-            document.querySelector('.title.style-scope.ytd-shorts')?.innerText ||
-            document.querySelector('.title')?.innerText ||
-            document.querySelector('yt-formatted-string.ytd-shorts')?.innerText;
+        // Use multiple methods to ensure we get the video information
+        let videoTitle = '';
+        let videoDescription = '';
+        let channelName = '';
         
-        debugLog("Found title:", videoTitle);
-        
-        // More comprehensive selector set for channel name
-        const channelName = 
-            document.querySelector('.ytd-channel-name a')?.innerText ||
-            document.querySelector('[id="channel-name"] a')?.innerText ||
-            document.querySelector('a.yt-simple-endpoint.style-scope.ytd-shorts')?.innerText ||
-            document.querySelector('.shorts-info a')?.innerText;
-        
-        debugLog("Found channel:", channelName);
-        
-        // More comprehensive approach for description
-        const descSelectors = [
-            '.description',
-            '.content.style-scope.ytd-shorts-compact-video-renderer',
-            '#description-text',
-            'yt-formatted-string.content',
-            '.metadata-snippet-text'
+        // Method 1: Direct DOM queries
+        const titleSelectors = [
+            'h1.title', 
+            'h2.title',
+            '#title',
+            '.title.style-scope.ytd-shorts',
+            '.title',
+            'yt-formatted-string.ytd-shorts',
+            // YouTube changes their selectors often, so use multiple approaches
+            'span[id="video-title"]',
+            '[aria-label*="shorts"]'
         ];
         
-        let videoDescription = '';
-        for (const selector of descSelectors) {
+        // Try each selector until we find something
+        for (const selector of titleSelectors) {
             const elements = document.querySelectorAll(selector);
             if (elements && elements.length > 0) {
-                videoDescription = elements[0].innerText;
-                if (videoDescription) {
-                    debugLog("Found description using selector:", selector);
-                    break;
+                for (const el of elements) {
+                    if (el.innerText && el.innerText.trim()) {
+                        videoTitle = el.innerText.trim();
+                        debugLog("Found title using selector:", selector);
+                        break;
+                    }
                 }
+                if (videoTitle) break;
+            }
+        }
+        
+        // Try to get channel name
+        const channelSelectors = [
+            '.ytd-channel-name a',
+            '[id="channel-name"] a',
+            'a.yt-simple-endpoint.style-scope.ytd-shorts',
+            '.shorts-info a',
+            // Additional selectors
+            'a[href*="/channel/"]',
+            'a[href*="/@"]',
+            '.byline-container'
+        ];
+        
+        for (const selector of channelSelectors) {
+            const elements = document.querySelectorAll(selector);
+            if (elements && elements.length > 0) {
+                for (const el of elements) {
+                    if (el.innerText && el.innerText.trim()) {
+                        channelName = el.innerText.trim();
+                        debugLog("Found channel using selector:", selector);
+                        break;
+                    }
+                }
+                if (channelName) break;
+            }
+        }
+        
+        // Method 2: YouTube metadata
+        if (!videoTitle || !channelName) {
+            // Look for JSON data in the page that contains video information
+            const scriptElements = document.querySelectorAll('script');
+            for (const script of scriptElements) {
+                if (script.textContent.includes('"videoDetails"') || 
+                    script.textContent.includes('"title"') ||
+                    script.textContent.includes('"shortDescription"')) {
+                    
+                    try {
+                        // Look for JSON objects that might contain video data
+                        const jsonMatch = script.textContent.match(/\{.*"videoDetails".*\}/s) || 
+                                        script.textContent.match(/\{.*"title".*"shortDescription".*\}/s);
+                        
+                        if (jsonMatch) {
+                            // Try to extract a valid JSON object
+                            const jsonText = jsonMatch[0];
+                            // Find the complete JSON object
+                            let braceCount = 0;
+                            let startIndex = 0;
+                            let endIndex = 0;
+                            
+                            for (let i = 0; i < jsonText.length; i++) {
+                                if (jsonText[i] === '{') {
+                                    if (braceCount === 0) startIndex = i;
+                                    braceCount++;
+                                } else if (jsonText[i] === '}') {
+                                    braceCount--;
+                                    if (braceCount === 0) {
+                                        endIndex = i + 1;
+                                        break;
+                                    }
+                                }
+                            }
+                            
+                            if (endIndex > startIndex) {
+                                try {
+                                    const jsonObj = JSON.parse(jsonText.substring(startIndex, endIndex));
+                                    
+                                    // Extract video details from various possible JSON structures
+                                    if (jsonObj.videoDetails) {
+                                        if (!videoTitle && jsonObj.videoDetails.title) {
+                                            videoTitle = jsonObj.videoDetails.title;
+                                            debugLog("Found title in JSON data");
+                                        }
+                                        
+                                        if (!channelName && jsonObj.videoDetails.author) {
+                                            channelName = jsonObj.videoDetails.author;
+                                            debugLog("Found channel in JSON data");
+                                        }
+                                        
+                                        if (!videoDescription && jsonObj.videoDetails.shortDescription) {
+                                            videoDescription = jsonObj.videoDetails.shortDescription;
+                                            debugLog("Found description in JSON data");
+                                        }
+                                    }
+                                } catch (e) {
+                                    // Invalid JSON, try next script
+                                    debugLog("Error parsing JSON:", e);
+                                }
+                            }
+                        }
+                    } catch (e) {
+                        // Ignore errors in JSON parsing
+                        debugLog("Error extracting JSON:", e);
+                    }
+                }
+            }
+        }
+        
+        // Method 3: Use window.ytInitialData if available
+        if ((!videoTitle || !channelName) && window.ytInitialData) {
+            try {
+                const data = window.ytInitialData;
+                // Parse ytInitialData for video information (structure varies)
+                // This is a simplified approach
+                const traverse = (obj, videoInfo) => {
+                    if (!obj || typeof obj !== 'object') return;
+                    
+                    // Check for common properties in the YouTube data structure
+                    if (obj.title && obj.title.runs && !videoInfo.title) {
+                        videoInfo.title = obj.title.runs.map(r => r.text).join('');
+                    }
+                    if (obj.shortBylineText && obj.shortBylineText.runs && !videoInfo.channel) {
+                        videoInfo.channel = obj.shortBylineText.runs.map(r => r.text).join('');
+                    }
+                    
+                    // Recursively check all properties
+                    for (const key in obj) {
+                        if (Object.prototype.hasOwnProperty.call(obj, key) && obj[key] && typeof obj[key] === 'object') {
+                            traverse(obj[key], videoInfo);
+                        }
+                    }
+                };
+                
+                const videoInfo = { title: '', channel: '' };
+                traverse(data, videoInfo);
+                
+                if (videoInfo.title && !videoTitle) {
+                    videoTitle = videoInfo.title;
+                    debugLog("Found title in ytInitialData");
+                }
+                
+                if (videoInfo.channel && !channelName) {
+                    channelName = videoInfo.channel;
+                    debugLog("Found channel in ytInitialData");
+                }
+            } catch (e) {
+                debugLog("Error extracting from ytInitialData:", e);
             }
         }
         
         // Get video ID from URL
         const urlMatch = window.location.href.match(/shorts\/([a-zA-Z0-9_-]+)/);
         const videoId = urlMatch ? urlMatch[1] : null;
+        
+        // If we still don't have enough info, try to get it from page title
+        if (!videoTitle) {
+            videoTitle = document.title.replace(" - YouTube", "").trim();
+        }
         
         if (videoTitle || videoId) {
             return { 
@@ -194,32 +362,159 @@ function extractEpisodeInfo() {
         }
     } catch (error) {
         debugLog("Error extracting video info:", error);
+        // Return minimal info rather than null
+        const urlMatch = window.location.href.match(/shorts\/([a-zA-Z0-9_-]+)/);
+        const videoId = urlMatch ? urlMatch[1] : null;
+        
+        return { 
+            title: document.title || "Unknown Title", 
+            description: "",
+            channel: "Unknown Channel",
+            url: window.location.href,
+            videoId: videoId
+        };
     }
     
-    return null;
+    // Last resort fallback
+    const urlMatch = window.location.href.match(/shorts\/([a-zA-Z0-9_-]+)/);
+    const videoId = urlMatch ? urlMatch[1] : null;
+    
+    return { 
+        title: document.title || "Unknown Title", 
+        description: "",
+        channel: "Unknown Channel",
+        url: window.location.href,
+        videoId: videoId
+    };
 }
 
-const sendEpisodeInfoToBackground = (episodeInfo) => {
-    debugLog("Sending data to background script:", episodeInfo);
-    
-    chrome.runtime.sendMessage({ action: 'identifyEpisode', data: episodeInfo }, (response) => {
-        debugLog("Received response from background:", response);
-        
+// Add this utility function for safer messaging
+function safeSendMessage(message) {
+  return new Promise((resolve, reject) => {
+    try {
+      chrome.runtime.sendMessage(message, response => {
         if (chrome.runtime.lastError) {
-            debugLog("Runtime error:", chrome.runtime.lastError);
-            displayError("Error: " + chrome.runtime.lastError.message);
-            return;
+          // Check if it's an invalidated context error
+          if (chrome.runtime.lastError.message.includes('Extension context invalidated')) {
+            showNotification('Extension was updated. Please refresh the page to continue.', 'error');
+            reject(new Error('Extension context invalidated'));
+          } else {
+            reject(new Error(chrome.runtime.lastError.message));
+          }
+          return;
         }
-        
-        if (response && response.result) {
-            displayResult(response.result);
-        } else if (response && response.error) {
-            displayError(response.error);
-        } else {
-            displayError("Could not identify this scene. Try another video.");
-        }
+        resolve(response);
+      });
+    } catch (error) {
+      // This catches direct exceptions like "Extension context invalidated"
+      showNotification('Extension error. Please refresh the page to continue.', 'error');
+      reject(error);
+    }
+  });
+}
+
+// Update your sendEpisodeInfoToBackground function
+function sendEpisodeInfoToBackground(videoInfo) {
+  debugLog("Sending data to background script:", videoInfo);
+  
+  return safeSendMessage({
+    action: 'identifyEpisode',
+    data: videoInfo
+  })
+  .then(response => {
+    if (response.error) {
+      throw new Error(response.error);
+    }
+    return response;
+  })
+  .catch(error => {
+    debugLog("Error sending data to background script:", error);
+    
+    if (error.message.includes('Extension context invalidated')) {
+      // Show UI notification that requires page refresh
+      showNotification('Extension was updated. Please refresh the page and try again.', 'error', true);
+    } else {
+      showNotification(`Error: ${error.message}`, 'error');
+    }
+    throw error;
+  });
+}
+
+// Add a notification function to show errors to the user
+function showNotification(message, type = 'info', requiresRefresh = false) {
+  // Remove any existing notifications
+  const existingNotification = document.querySelector('.scenecope-notification');
+  if (existingNotification) {
+    existingNotification.remove();
+  }
+  
+  // Create new notification
+  const notification = document.createElement('div');
+  notification.className = `scenecope-notification scenecope-${type}`;
+  notification.style.cssText = `
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background-color: ${type === 'error' ? '#f44336' : '#4CAF50'};
+    color: white;
+    padding: 16px;
+    border-radius: 4px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    z-index: 10000;
+    max-width: 300px;
+  `;
+  
+  // Add content
+  notification.textContent = message;
+  
+  // Add refresh button if needed
+  if (requiresRefresh) {
+    const refreshBtn = document.createElement('button');
+    refreshBtn.textContent = 'Refresh Page';
+    refreshBtn.style.cssText = `
+      margin-top: 10px;
+      padding: 8px 12px;
+      background-color: white;
+      color: #333;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+    `;
+    refreshBtn.addEventListener('click', () => {
+      window.location.reload();
     });
-};
+    notification.appendChild(document.createElement('br'));
+    notification.appendChild(refreshBtn);
+  }
+  
+  // Add close button
+  const closeBtn = document.createElement('span');
+  closeBtn.textContent = '×';
+  closeBtn.style.cssText = `
+    position: absolute;
+    top: 5px;
+    right: 10px;
+    cursor: pointer;
+    font-size: 18px;
+    font-weight: bold;
+  `;
+  closeBtn.addEventListener('click', () => {
+    notification.remove();
+  });
+  
+  notification.appendChild(closeBtn);
+  document.body.appendChild(notification);
+  
+  // Auto-remove after 10 seconds if not a refresh-required notification
+  if (!requiresRefresh) {
+    setTimeout(() => {
+      if (document.body.contains(notification)) {
+        notification.remove();
+      }
+    }, 10000);
+  }
+}
 
 // Display loading state while waiting for API response
 function displayLoadingState() {

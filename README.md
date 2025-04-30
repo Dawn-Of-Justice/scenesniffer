@@ -1,11 +1,12 @@
 # YouTube Shorts Identifier
 
-This Chrome extension helps users identify which episode a YouTube Shorts video is from, based on the show it belongs to. The extension utilizes Google's Gemini service for accurate identification.
+This Chrome extension helps users identify which episode a YouTube Shorts video is from, based on the show it belongs to. The extension utilizes Google's Gemini API for accurate identification.
 
 ## Features
 
 - **Episode Identification**: Quickly find out the episode details from YouTube Shorts.
-- **User Authentication**: Each user can sign in using their account, generating a unique key or auth token for personalized usage of the Gemini service.
+- **Google AI Integration**: Uses Google's Gemini API for accurate scene identification.
+- **User Authentication**: Each user needs to provide their own Google Gemini API key.
 - **Social Media Links**: Easy access to the developer's social media for updates and support.
 
 ## Installation
@@ -30,8 +31,9 @@ This Chrome extension helps users identify which episode a YouTube Shorts video 
 ## Usage
 
 1. Click on the extension icon in the Chrome toolbar.
-2. Sign in with your account to generate a unique key or auth token.
-3. Navigate to a YouTube Shorts video and click the extension icon to identify the episode.
+2. Sign in to [Google AI Studio](https://ai.google.dev/) and obtain your API key.
+3. Enter your Google Gemini API key in the extension setup.
+4. Navigate to a YouTube Shorts video and click the extension icon to identify the episode.
 
 ## Contributing
 
