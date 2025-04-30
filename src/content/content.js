@@ -118,8 +118,6 @@ function removeAnalyzeIcon() {
     }
 }
 
-// Process the current video when button is clicked
-// Replace the analyzeCurrentVideo function
 async function analyzeCurrentVideo() {
   try {
       debugLog("Analyzing current video");
@@ -388,7 +386,6 @@ function extractEpisodeInfo() {
     };
 }
 
-// Add this utility function for safer messaging
 function safeSendMessage(message) {
   return new Promise((resolve, reject) => {
     try {
@@ -523,52 +520,47 @@ function displayLoadingState() {
     if (existingContainer) {
         existingContainer.remove();
     }
-    
+
+    // Create a new loading container
     const loadingContainer = document.createElement('div');
     loadingContainer.id = 'shorts-identifier-result';
-    
-    // YouTube-style card
+
+    // Apply YouTube-style card styling
     styleYouTubeCard(loadingContainer);
-    loadingContainer.style.display = 'flex';
-    loadingContainer.style.alignItems = 'center';
-    loadingContainer.style.minWidth = '200px';
-    
-    // YouTube-style loading spinner
+
+    // Add YouTube-style loading spinner
     loadingContainer.innerHTML = `
         <div style="display: inline-block; width: 24px; height: 24px; border: 3px solid rgba(255,255,255,0.3); 
                     border-radius: 50%; border-top-color: white; 
                     animation: scenecope-spin 1s linear infinite; margin-right: 12px;"></div>
         <span style="font-family: 'YouTube Sans', 'Roboto', sans-serif; font-size: 14px;">Identifying scene...</span>
     `;
-    
-    // Add animation style
-    const styleEl = document.createElement('style');
-    styleEl.innerHTML = `
-        @keyframes scenecope-spin {
-            to { transform: rotate(360deg); }
-        }
-    `;
-    document.head.appendChild(styleEl);
-    
+
+    // Append the loading container to the body
     document.body.appendChild(loadingContainer);
 }
 
 // Common styling function for YouTube-like cards
 function styleYouTubeCard(element) {
-    element.style.position = 'fixed';
-    element.style.bottom = '130px';
-    element.style.right = '20px';
+    element.style.position = 'fixed'; 
+    element.style.bottom = '130px'; 
+    element.style.right = '20px'; 
     element.style.backgroundColor = '#212121'; // YouTube dark mode color
     element.style.color = 'white';
     element.style.borderRadius = '12px';
     element.style.padding = '16px';
     element.style.boxShadow = '0 4px 20px rgba(0,0,0,0.4)';
-    element.style.zIndex = '9999';
+    element.style.zIndex = '9999'; 
     element.style.fontSize = '14px';
     element.style.lineHeight = '1.4';
     element.style.fontFamily = '"YouTube Sans", "Roboto", sans-serif';
     element.style.border = '1px solid rgba(255,255,255,0.1)';
     element.style.backdropFilter = 'blur(10px)';
+    element.style.minWidth = '200px'; // Ensure a minimum width
+    element.style.display = 'flex'; // Flexbox for alignment
+    element.style.alignItems = 'center'; // Center align items vertically
+
+    element.style.setProperty('position', 'fixed', 'important');
 }
 
 const displayResult = (result) => {
@@ -777,3 +769,42 @@ const displayError = (errorMessage) => {
     errorContainer.appendChild(retryButton);
     document.body.appendChild(errorContainer);
 };
+
+document.addEventListener('DOMContentLoaded', function () {
+    // Listen for clicks on the analyze button
+    document.body.addEventListener('click', async function (event) {
+        if (event.target.classList.contains('scenecope-analyze-btn')) {
+            // Remove any existing result container
+            const existingResult = document.querySelector('.scenecope-result-container');
+            if (existingResult) {
+                existingResult.remove();
+            }
+
+            // Create a new result container
+            const resultContainer = document.createElement('div');
+            resultContainer.className = 'scenecope-result-container';
+            resultContainer.textContent = 'Analyzing... Please wait.';
+            document.body.appendChild(resultContainer);
+
+            try {
+                // Simulate an API call or prediction process
+                const prediction = await simulatePrediction();
+
+                // Update the result container with the prediction
+                resultContainer.textContent = prediction;
+            } catch (error) {
+                resultContainer.textContent = 'An error occurred while analyzing the video.';
+                console.error(error);
+            }
+        }
+    });
+
+    // Simulate a prediction process (replace this with your actual API call)
+    async function simulatePrediction() {
+        return new Promise((resolve) => {
+            setTimeout(() => {
+                resolve('This is the predicted result for the video.');
+            }, 2000); // Simulate a 2-second delay
+        });
+    }
+});

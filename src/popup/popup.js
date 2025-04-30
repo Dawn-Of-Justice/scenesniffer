@@ -132,3 +132,50 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 });
+
+document.addEventListener('DOMContentLoaded', function () {
+    const infoBox = document.getElementById('info-box');
+    const resultContainer = document.getElementById('result-container');
+    const resultText = document.getElementById('result-text');
+    const identifyButton = document.getElementById('identify-button');
+    const inputField = document.getElementById('input-field');
+
+    // Handle manual prediction
+    identifyButton.addEventListener('click', async function () {
+        const url = inputField.value.trim();
+
+        if (!url) {
+            // Replace alert with resultContainer update
+            resultContainer.textContent = 'Please enter a valid YouTube Shorts URL.';
+            resultContainer.style.display = 'block'; // Ensure the container is visible
+            return;
+        }
+
+        // Hide the "How to use" section and show the result container
+        infoBox.style.display = 'none';
+        resultContainer.style.display = 'block';
+
+        // Simulate loading
+        resultContainer.textContent = 'Analyzing... Please wait.';
+
+        try {
+            // Replace this with your actual API call logic
+            const prediction = await simulatePrediction(url);
+
+            // Update the result text with the prediction
+            resultContainer.textContent = prediction;
+        } catch (error) {
+            resultContainer.textContent = 'An error occurred while analyzing the video.';
+            console.error(error);
+        }
+    });
+
+    // Simulate a prediction process (replace this with your actual API call)
+    async function simulatePrediction(url) {
+        return new Promise((resolve) => {
+            setTimeout(() => {
+                resolve(`This is a prediction result for the video: ${url}`);
+            }, 2000); // Simulate a 2-second delay
+        });
+    }
+});

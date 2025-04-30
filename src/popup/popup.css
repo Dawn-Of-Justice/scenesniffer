@@ -2,13 +2,16 @@ body {
     font-family: 'Roboto', 'YouTube Sans', Arial, sans-serif;
     margin: 0;
     padding: 0;
-    background-color: #0F0F0F; /* YouTube dark mode background */
+    background-color: #0F0F0F; 
     color: #FFFFFF;
     width: 350px;
 }
 
 .container {
-    padding: 16px;
+    padding: 13px;
+    box-sizing: border-box; /* Include padding in the total dimensions */
+    height: 100%; /* Ensure the container uses the full height */
+    overflow: hidden;
 }
 
 .logo-container {
@@ -158,7 +161,6 @@ a:hover {
 
 .socials {
     margin-top: 20px;
-    padding-top: 15px;
     border-top: 1px solid #303030;
 }
 
@@ -184,16 +186,15 @@ a:hover {
 }
 
 #result-container {
-    margin-top: 12px;
-    padding: 12px;
-    border: 1px solid #303030;
-    border-radius: 8px;
-    background-color: #212121;
-    max-height: 200px;
-    overflow-y: auto;
+    display: none; /* Initially hidden */
+    padding: 10px;
+    margin-top: 10px;
+    background-color: #f8d7da;
+    color: #ffffff;
+    border: 1px solid #f5c6cb;
+    border-radius: 5px;
     font-size: 14px;
-    line-height: 1.4;
-    color: #FFFFFF;
+    text-align: center;
 }
 
 .header-with-back {
@@ -229,7 +230,24 @@ a:hover {
 }
 
 .setup-heading {
-    text-align: center;
+    text-align: left;
     font-size: 18px;
-    margin: 0 0 10px 0; /* Add spacing below the heading */
+    margin: 0 0 10px 0;
+}
+
+/* Add this CSS to your content script's injected styles */
+.scenecope-result-container {
+    position: fixed; /* Fix it relative to the viewport */
+    top: 20px; /* Adjust the vertical position */
+    right: 20px; /* Adjust the horizontal position */
+    z-index: 9999; /* Ensure it appears above other elements */
+    background-color: #212121; /* Match YouTube's dark theme */
+    color: #FFFFFF;
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid #303030;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    max-width: 300px;
+    font-size: 14px;
+    line-height: 1.5;
 }

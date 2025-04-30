@@ -15,7 +15,6 @@ const identifyEpisodeWithGemini = async (videoInfo, apiKey) => {
     try {
         debugLog("Sending request to Gemini API for video:", videoInfo.url);
         
-        // Setup generation config - IDENTICAL to your Google AI Studio sample
         const generationConfig = {
             temperature: 1,
             topP: 0.95,
