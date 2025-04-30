@@ -169,51 +169,35 @@ async function analyzeCurrentVideo() {
 
 function extractEpisodeInfo() {
     try {
-        // Use multiple methods to ensure we get the video information
         let videoTitle = '';
         let videoDescription = '';
         let channelName = '';
-        
-        // Method 1: Direct DOM queries
-        const titleSelectors = [
-            'h1.title', 
-            'h2.title',
-            '#title',
-            '.title.style-scope.ytd-shorts',
-            '.title',
-            'yt-formatted-string.ytd-shorts',
-            // YouTube changes their selectors often, so use multiple approaches
-            'span[id="video-title"]',
-            '[aria-label*="shorts"]'
-        ];
-        
-        // Try each selector until we find something
-        for (const selector of titleSelectors) {
-            const elements = document.querySelectorAll(selector);
-            if (elements && elements.length > 0) {
-                for (const el of elements) {
-                    if (el.innerText && el.innerText.trim()) {
-                        videoTitle = el.innerText.trim();
-                        debugLog("Found title using selector:", selector);
-                        break;
-                    }
-                }
-                if (videoTitle) break;
-            }
+
+        // Check for the title in 'ytShortsVideoTitleViewModelShortsVideoTitle'
+        const titleElement = document.querySelector('h2.ytShortsVideoTitleViewModelShortsVideoTitle');
+        if (titleElement && titleElement.innerText.trim()) {
+            videoTitle = titleElement.innerText.trim();
+            debugLog("Found title using 'ytShortsVideoTitleViewModelShortsVideoTitle'");
         }
-        
+
+        // Check for the description in 'plain-snippet-text'
+        const descriptionElement = document.querySelector('#snippet-text #plain-snippet-text');
+        if (descriptionElement && descriptionElement.innerText.trim()) {
+            videoDescription = descriptionElement.innerText.trim();
+            debugLog("Found description using 'plain-snippet-text'");
+        }
+
         // Try to get channel name
         const channelSelectors = [
             '.ytd-channel-name a',
             '[id="channel-name"] a',
             'a.yt-simple-endpoint.style-scope.ytd-shorts',
             '.shorts-info a',
-            // Additional selectors
             'a[href*="/channel/"]',
             'a[href*="/@"]',
             '.byline-container'
         ];
-        
+
         for (const selector of channelSelectors) {
             const elements = document.querySelectorAll(selector);
             if (elements && elements.length > 0) {
@@ -227,131 +211,19 @@ function extractEpisodeInfo() {
                 if (channelName) break;
             }
         }
-        
-        // Method 2: YouTube metadata
-        if (!videoTitle || !channelName) {
-            // Look for JSON data in the page that contains video information
-            const scriptElements = document.querySelectorAll('script');
-            for (const script of scriptElements) {
-                if (script.textContent.includes('"videoDetails"') || 
-                    script.textContent.includes('"title"') ||
-                    script.textContent.includes('"shortDescription"')) {
-                    
-                    try {
-                        // Look for JSON objects that might contain video data
-                        const jsonMatch = script.textContent.match(/\{.*"videoDetails".*\}/s) || 
-                                        script.textContent.match(/\{.*"title".*"shortDescription".*\}/s);
-                        
-                        if (jsonMatch) {
-                            // Try to extract a valid JSON object
-                            const jsonText = jsonMatch[0];
-                            // Find the complete JSON object
-                            let braceCount = 0;
-                            let startIndex = 0;
-                            let endIndex = 0;
-                            
-                            for (let i = 0; i < jsonText.length; i++) {
-                                if (jsonText[i] === '{') {
-                                    if (braceCount === 0) startIndex = i;
-                                    braceCount++;
-                                } else if (jsonText[i] === '}') {
-                                    braceCount--;
-                                    if (braceCount === 0) {
-                                        endIndex = i + 1;
-                                        break;
-                                    }
-                                }
-                            }
-                            
-                            if (endIndex > startIndex) {
-                                try {
-                                    const jsonObj = JSON.parse(jsonText.substring(startIndex, endIndex));
-                                    
-                                    // Extract video details from various possible JSON structures
-                                    if (jsonObj.videoDetails) {
-                                        if (!videoTitle && jsonObj.videoDetails.title) {
-                                            videoTitle = jsonObj.videoDetails.title;
-                                            debugLog("Found title in JSON data");
-                                        }
-                                        
-                                        if (!channelName && jsonObj.videoDetails.author) {
-                                            channelName = jsonObj.videoDetails.author;
-                                            debugLog("Found channel in JSON data");
-                                        }
-                                        
-                                        if (!videoDescription && jsonObj.videoDetails.shortDescription) {
-                                            videoDescription = jsonObj.videoDetails.shortDescription;
-                                            debugLog("Found description in JSON data");
-                                        }
-                                    }
-                                } catch (e) {
-                                    // Invalid JSON, try next script
-                                    debugLog("Error parsing JSON:", e);
-                                }
-                            }
-                        }
-                    } catch (e) {
-                        // Ignore errors in JSON parsing
-                        debugLog("Error extracting JSON:", e);
-                    }
-                }
-            }
-        }
-        
-        // Method 3: Use window.ytInitialData if available
-        if ((!videoTitle || !channelName) && window.ytInitialData) {
-            try {
-                const data = window.ytInitialData;
-                // Parse ytInitialData for video information (structure varies)
-                // This is a simplified approach
-                const traverse = (obj, videoInfo) => {
-                    if (!obj || typeof obj !== 'object') return;
-                    
-                    // Check for common properties in the YouTube data structure
-                    if (obj.title && obj.title.runs && !videoInfo.title) {
-                        videoInfo.title = obj.title.runs.map(r => r.text).join('');
-                    }
-                    if (obj.shortBylineText && obj.shortBylineText.runs && !videoInfo.channel) {
-                        videoInfo.channel = obj.shortBylineText.runs.map(r => r.text).join('');
-                    }
-                    
-                    // Recursively check all properties
-                    for (const key in obj) {
-                        if (Object.prototype.hasOwnProperty.call(obj, key) && obj[key] && typeof obj[key] === 'object') {
-                            traverse(obj[key], videoInfo);
-                        }
-                    }
-                };
-                
-                const videoInfo = { title: '', channel: '' };
-                traverse(data, videoInfo);
-                
-                if (videoInfo.title && !videoTitle) {
-                    videoTitle = videoInfo.title;
-                    debugLog("Found title in ytInitialData");
-                }
-                
-                if (videoInfo.channel && !channelName) {
-                    channelName = videoInfo.channel;
-                    debugLog("Found channel in ytInitialData");
-                }
-            } catch (e) {
-                debugLog("Error extracting from ytInitialData:", e);
-            }
-        }
-        
+
         // Get video ID from URL
         const urlMatch = window.location.href.match(/shorts\/([a-zA-Z0-9_-]+)/);
         const videoId = urlMatch ? urlMatch[1] : null;
-        
+
         // If we still don't have enough info, try to get it from page title
         if (!videoTitle) {
             videoTitle = document.title.replace(" - YouTube", "").trim();
         }
-        
+
         if (videoTitle || videoId) {
-            return { 
-                title: videoTitle || "Unknown Title", 
+            return {
+                title: videoTitle || "Unknown Title",
                 description: videoDescription || "",
                 channel: channelName || "Unknown Channel",
                 url: window.location.href,
@@ -360,25 +232,23 @@ function extractEpisodeInfo() {
         }
     } catch (error) {
         debugLog("Error extracting video info:", error);
-        // Return minimal info rather than null
         const urlMatch = window.location.href.match(/shorts\/([a-zA-Z0-9_-]+)/);
         const videoId = urlMatch ? urlMatch[1] : null;
-        
-        return { 
-            title: document.title || "Unknown Title", 
+
+        return {
+            title: document.title || "Unknown Title",
             description: "",
             channel: "Unknown Channel",
             url: window.location.href,
             videoId: videoId
         };
     }
-    
-    // Last resort fallback
+
     const urlMatch = window.location.href.match(/shorts\/([a-zA-Z0-9_-]+)/);
     const videoId = urlMatch ? urlMatch[1] : null;
-    
-    return { 
-        title: document.title || "Unknown Title", 
+
+    return {
+        title: document.title || "Unknown Title",
         description: "",
         channel: "Unknown Channel",
         url: window.location.href,
@@ -407,33 +277,6 @@ function safeSendMessage(message) {
       showNotification('Extension error. Please refresh the page to continue.', 'error');
       reject(error);
     }
-  });
-}
-
-// Update your sendEpisodeInfoToBackground function
-function sendEpisodeInfoToBackground(videoInfo) {
-  debugLog("Sending data to background script:", videoInfo);
-  
-  return safeSendMessage({
-    action: 'identifyEpisode',
-    data: videoInfo
-  })
-  .then(response => {
-    if (response.error) {
-      throw new Error(response.error);
-    }
-    return response;
-  })
-  .catch(error => {
-    debugLog("Error sending data to background script:", error);
-    
-    if (error.message.includes('Extension context invalidated')) {
-      // Show UI notification that requires page refresh
-      showNotification('Extension was updated. Please refresh the page and try again.', 'error', true);
-    } else {
-      showNotification(`Error: ${error.message}`, 'error');
-    }
-    throw error;
   });
 }
 
@@ -542,9 +385,9 @@ function displayLoadingState() {
 
 // Common styling function for YouTube-like cards
 function styleYouTubeCard(element) {
-    element.style.position = 'fixed'; 
-    element.style.bottom = '130px'; 
-    element.style.right = '20px'; 
+    element.style.setProperty('position', 'fixed', 'important');
+    element.style.setProperty('bottom', '130px', 'important'); 
+    element.style.setProperty('right', '20px', 'important'); 
     element.style.backgroundColor = '#212121'; // YouTube dark mode color
     element.style.color = 'white';
     element.style.borderRadius = '12px';
@@ -559,8 +402,6 @@ function styleYouTubeCard(element) {
     element.style.minWidth = '200px'; // Ensure a minimum width
     element.style.display = 'flex'; // Flexbox for alignment
     element.style.alignItems = 'center'; // Center align items vertically
-
-    element.style.setProperty('position', 'fixed', 'important');
 }
 
 const displayResult = (result) => {
@@ -577,6 +418,13 @@ const displayResult = (result) => {
     
     // Apply YouTube-style card
     styleYouTubeCard(resultContainer);
+    
+    // Ensure positioning is correct by explicitly setting these again after all styling
+    // Using setProperty with !important to ensure it overrides other styles
+    resultContainer.style.setProperty('position', 'fixed', 'important');
+    resultContainer.style.setProperty('bottom', '130px', 'important');
+    resultContainer.style.setProperty('right', '20px', 'important');
+    
     resultContainer.style.maxWidth = '320px';
     resultContainer.style.maxHeight = '300px';
     resultContainer.style.overflowY = 'auto';
@@ -661,7 +509,8 @@ const displayResult = (result) => {
         }
     `;
     
-    resultContainer.style.position = 'relative'; // For absolute positioning of close button
+    // The close button can be absolutely positioned within a fixed container too
+    
     resultContainer.appendChild(closeButton);
     resultContainer.appendChild(title);
     resultContainer.appendChild(content);
@@ -769,42 +618,3 @@ const displayError = (errorMessage) => {
     errorContainer.appendChild(retryButton);
     document.body.appendChild(errorContainer);
 };
-
-document.addEventListener('DOMContentLoaded', function () {
-    // Listen for clicks on the analyze button
-    document.body.addEventListener('click', async function (event) {
-        if (event.target.classList.contains('scenecope-analyze-btn')) {
-            // Remove any existing result container
-            const existingResult = document.querySelector('.scenecope-result-container');
-            if (existingResult) {
-                existingResult.remove();
-            }
-
-            // Create a new result container
-            const resultContainer = document.createElement('div');
-            resultContainer.className = 'scenecope-result-container';
-            resultContainer.textContent = 'Analyzing... Please wait.';
-            document.body.appendChild(resultContainer);
-
-            try {
-                // Simulate an API call or prediction process
-                const prediction = await simulatePrediction();
-
-                // Update the result container with the prediction
-                resultContainer.textContent = prediction;
-            } catch (error) {
-                resultContainer.textContent = 'An error occurred while analyzing the video.';
-                console.error(error);
-            }
-        }
-    });
-
-    // Simulate a prediction process (replace this with your actual API call)
-    async function simulatePrediction() {
-        return new Promise((resolve) => {
-            setTimeout(() => {
-                resolve('This is the predicted result for the video.');
-            }, 2000); // Simulate a 2-second delay
-        });
-    }
-});
