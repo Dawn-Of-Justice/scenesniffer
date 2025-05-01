@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "SceneSniffer",
   "version": "1.0.0",
-  "description": "Identifies which TV show episode a YouTube Shorts clip is from using Google Gemini",
+  "description": "Identifies which TV show episode or movie a YouTube Shorts clip is from using AIML API.",
   "permissions": [
     "storage", 
     "activeTab",
