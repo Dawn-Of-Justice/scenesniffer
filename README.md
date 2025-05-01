@@ -1,13 +1,13 @@
 # ScreenSniffer - A YouTube Shorts Identifier
 
-This Chrome extension helps users identify which movie or series(and episode number) a YouTube Shorts video is from. The extension utilizes AIML's GPT-4o API for accurate identification.
+ScreenSniffer is a Chrome extension that identifies whether a YouTube Shorts video is from a movie or TV series, including specific details like show name, season, episode number, and episode title when applicable. It uses an advanced AI model with a custom prompt to analyze video metadata and thumbnails for accurate identification.
 
 ## Features
 
-- **Episode Identification**: Quickly find out the episode details from YouTube Shorts.
-- **Google AI Integration**: Uses AIML API for using the most advanced AI models such as GPT4o and Gemini.
-- **High accuracy**: The extension uses a variety of data from different sources to ensure the highest accuracy in identifying episodes.
-- **User-friendly**: Simple and intuitive interface for easy navigation.
+- **Movie and Series Identification**: Determines if a YouTube Short is from a movie or TV series, providing episode details for series when available.
+- **AI-Powered Analysis**: Leverages a sophisticated AI model to process video title, description, channel, URL, and thumbnail data.
+- **High Accuracy**: Combines multiple data sources with a weighted focus on title and description for reliable results.
+- **User-Friendly Interface**: Simple and intuitive design for seamless navigation and quick identification.
 
 ## Installation
 
