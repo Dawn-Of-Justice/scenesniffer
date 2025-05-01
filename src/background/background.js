@@ -5,23 +5,15 @@ function debugLog(...args) {
 
 debugLog("Background service worker loaded");
 
-const AUTH_TOKEN_KEY = 'gemini_api_key';
+const AUTH_TOKEN_KEY = 'aiml_api_key'; // Updated key name
 
-const identifyEpisodeWithGemini = async (videoInfo, apiKey) => {
+const identifyEpisodeWithAIML = async (videoInfo, apiKey) => {
     if (!apiKey) {
         throw new Error('No API key provided');
     }
     
     try {
-        debugLog("Sending request to Gemini API for video:", videoInfo.url);
-        
-        const generationConfig = {
-            temperature: 1,
-            topP: 0.95,
-            topK: 40,
-            maxOutputTokens: 8192,
-            responseMimeType: 'text/plain',
-        };
+        debugLog("Sending request to AIML API for video:", videoInfo.url);
         
         // Get YouTube video thumbnail
         const videoId = extractVideoId(videoInfo.url);
@@ -52,32 +44,12 @@ const identifyEpisodeWithGemini = async (videoInfo, apiKey) => {
             }
         }
         
-        // Build request following the EXACT structure from the Google AI Studio example
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+        // Build request following the AIML API structure
+        const url = 'https://api.aimlapi.com/v1/chat/completions';
         
-        // Follow the structure of the example with two consecutive user turns
-        const requestBody = {
-            generationConfig,
-            contents: [
-                {
-                    role: 'user',
-                    parts: [
-                        // First user turn is just the image
-                        ...(thumbnailData ? [{
-                            inlineData: {
-                                data: thumbnailData,
-                                mimeType: "image/jpeg"
-                            }
-                        }] : [])
-                    ]
-                },
-                {
-                    role: 'user',
-                    parts: [
-                        // Second user turn is the text prompt
-                        { 
-                            text: `What is this content?
-                            
+        // Construct the prompt
+        const promptText = `What is this content?
+            
 Title: "${videoInfo.title}"
 ${videoInfo.description ? `Description: "${videoInfo.description}"` : ''}
 ${videoInfo.channel ? `Channel: "${videoInfo.channel}"` : ''}
@@ -103,11 +75,46 @@ If it's a MOVIE:
 If it's NEITHER a TV show nor a movie, or you can't identify it:
 - Brief explanation of what you can see
 - Clearly state that you cannot identify it as a specific show or movie
-Do not make the response too long, just give the most relevant information.`
+Do not make the response too long, just give the most relevant information.`;
+
+        // Prepare messages array (including image if available)
+        const messages = [];
+        
+        // Add system message
+        messages.push({
+            role: "system",
+            content: "You are a helpful assistant that identifies TV shows, movies, and other video content."
+        });
+        
+        // Add user message with image if available
+        if (thumbnailData) {
+            messages.push({
+                role: "user",
+                content: [
+                    {
+                        type: "image_url",
+                        image_url: {
+                            url: `data:image/jpeg;base64,${thumbnailData}`
                         }
-                    ]
-                }
-            ]
+                    },
+                    {
+                        type: "text",
+                        text: promptText
+                    }
+                ]
+            });
+        } else {
+            messages.push({
+                role: "user",
+                content: promptText
+            });
+        }
+
+        const requestBody = {
+            model: "chatgpt-4o-latest",
+            max_tokens: 1000,
+            temperature: 1,
+            messages: messages
         };
 
         // Add retry mechanism for reliability
@@ -119,6 +126,7 @@ Do not make the response too long, just give the most relevant information.`
                 response = await fetch(url, {
                     method: 'POST',
                     headers: {
+                        'Authorization': `Bearer ${apiKey}`,
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify(requestBody)
@@ -146,19 +154,9 @@ Do not make the response too long, just give the most relevant information.`
         const data = await response.json();
         debugLog("Full API response:", data);
 
-        // Extract content
-        if (data.candidates && data.candidates.length > 0 && 
-            data.candidates[0].content) {
-            
-            let resultText = '';
-            if (data.candidates[0].content.parts && data.candidates[0].content.parts.length > 0) {
-                resultText = data.candidates[0].content.parts[0].text;
-            } else if (data.candidates[0].content.text) {
-                resultText = data.candidates[0].content.text;
-            } else {
-                debugLog("Found candidates but couldn't extract text:", data.candidates[0]);
-                resultText = "Couldn't extract text from the API response";
-            }
+        // Extract content from the AIML API response format
+        if (data.choices && data.choices.length > 0) {
+            const resultText = data.choices[0].message.content;
             
             return {
                 result: resultText,
@@ -166,10 +164,10 @@ Do not make the response too long, just give the most relevant information.`
             };
         } else {
             debugLog("Unexpected response format:", data);
-            throw new Error("Unexpected response format from Gemini API");
+            throw new Error("Unexpected response format from AIML API");
         }
     } catch (error) {
-        debugLog('Error calling Gemini API:', error);
+        debugLog('Error calling AIML API:', error);
         throw error;
     }
 };
@@ -283,8 +281,8 @@ async function getEpisodeInfo(videoInfo) {
         
         debugLog("Using API key:", apiKey.substring(0, 5) + '...');
         
-        // Call API with the video info
-        const result = await identifyEpisodeWithGemini(videoInfo, apiKey);
+        // Call API with the video info (using the new function)
+        const result = await identifyEpisodeWithAIML(videoInfo, apiKey);
         debugLog("API result:", result);
         return result;
     } catch (error) {
