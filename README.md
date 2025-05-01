@@ -15,11 +15,7 @@ ScreenSniffer is a Chrome extension that identifies whether a YouTube Shorts vid
    ```
    git clone https://github.com/Dawn-Of-Justice/SceneSniffer.git
    ```
-2. Navigate to the project directory:
-   ```
-   cd SceneSniffer
-   ```
-3. Load the extension in Chrome:
+2. Load the extension in Chrome:
    - Open Chrome and go to `chrome://extensions/`
    - Enable "Developer mode"
    - Click "Load unpacked" and select the `ScreenSniffer` directory.
