@@ -2,6 +2,9 @@
 
 ScreenSniffer is a Chrome extension that identifies whether a YouTube Shorts video is from a movie or TV series, including specific details like show name, season, episode number, and episode title when applicable. It uses an advanced AI model with a custom prompt to analyze video metadata and thumbnails for accurate identification.
 
+**Check out here for more info:** [https://dawn-of-justice.github.io/scenesniffer/](https://dawn-of-justice.github.io/scenesniffer/)
+
+
 ## Features
 
 - **Movie and Series Identification**: Determines if a YouTube Short is from a movie or TV series, providing episode details for series when available.
@@ -32,4 +35,4 @@ Contributions are welcome! Please open an issue or submit a pull request for any
 
 ## License
 
-This project is licensed under the MIT License. See the LICENSE file for details.
+This project is licensed under the [MIT License](LICENSE). See the LICENSE file for details.
