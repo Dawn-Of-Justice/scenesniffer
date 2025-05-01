@@ -76,7 +76,8 @@ const identifyEpisodeWithGemini = async (videoInfo, apiKey) => {
                     parts: [
                         // Second user turn is the text prompt
                         { 
-                            text: `What is this content?
+                            text: `You are a tool which lets the user know which movie or series a youtube short is from. 
+You have the following data:
                             
 Title: "${videoInfo.title}"
 ${videoInfo.description ? `Description: "${videoInfo.description}"` : ''}
@@ -101,8 +102,8 @@ If it's a MOVIE:
 - Brief explanation
 
 If it's NEITHER a TV show nor a movie, or you can't identify it:
-- Brief explanation of what you can see
-- Clearly state that you cannot identify it as a specific show or movie
+- Clearly state that you cannot identify it as a specific show or movie. If you have any vague guess, make it here.
+- Brief explanation
 Do not make the response too long, just give the most relevant information.`
                         }
                     ]

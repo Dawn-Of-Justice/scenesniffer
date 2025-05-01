@@ -48,17 +48,18 @@ const identifyEpisodeWithAIML = async (videoInfo, apiKey) => {
         const url = 'https://api.aimlapi.com/v1/chat/completions';
         
         // Construct the prompt
-        const promptText = `What is this content?
-            
+        const promptText = `You are a tool which lets the user know which movie or series a youtube short is from. 
+You have the following data:
+                            
 Title: "${videoInfo.title}"
 ${videoInfo.description ? `Description: "${videoInfo.description}"` : ''}
 ${videoInfo.channel ? `Channel: "${videoInfo.channel}"` : ''}
 ${videoInfo.url ? `URL: ${videoInfo.url}` : ''}
 
-Please identify what this clip is from:
-First start by identifying if it's a TV show episode, a movie or a random video.
-then based on that, each field must be answered following the format below:
+There is a high chance that the name of the movie/series will be present in the title or description itself. So give high weightage to them while deciding the result.
+Either way also use the image from the thumbnail to predict the movie/series information.
 
+Now, perform identification process in the following format
 If it's a TV SHOW episode:
 - Show name
 - Season number
@@ -68,14 +69,14 @@ If it's a TV SHOW episode:
 
 If it's a MOVIE:
 - Movie title
-- Release year
-- Director (if known)
 - Brief explanation
 
 If it's NEITHER a TV show nor a movie, or you can't identify it:
-- Brief explanation of what you can see
-- Clearly state that you cannot identify it as a specific show or movie
-Do not make the response too long, just give the most relevant information.`;
+- Clearly state that you this video doesnot appear to be from any movie/ series
+- ONLY IF IT SEEMS REASONABLE, mention as Brief explanation what are some possible movies this could be
+
+The brief explanation should mention in one line about the movie/series without ANY SPOILERS.
+Do not make the response too long, just give the most relevant information and NEVER TALK about how you arrived at decision.`;
 
         // Prepare messages array (including image if available)
         const messages = [];
@@ -112,8 +113,8 @@ Do not make the response too long, just give the most relevant information.`;
 
         const requestBody = {
             model: "chatgpt-4o-latest",
-            max_tokens: 1000,
-            temperature: 1,
+            max_tokens: 300,
+            temperature: .1,
             messages: messages
         };
 
