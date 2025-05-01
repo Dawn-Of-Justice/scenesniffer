@@ -48,36 +48,88 @@ const identifyEpisodeWithAIML = async (videoInfo, apiKey) => {
         const url = 'https://api.aimlapi.com/v1/chat/completions';
         
         // Construct the prompt
-        const promptText = `You are a tool which lets the user know which movie or series a youtube short is from. 
-You have the following data:
-                            
+        const promptText = `You are a tool integrated into a Chrome extension that identifies whether a YouTube Short is from a movie or a TV series, using the following data:
+
 Title: "${videoInfo.title}"
-${videoInfo.description ? `Description: "${videoInfo.description}"` : ''}
-${videoInfo.channel ? `Channel: "${videoInfo.channel}"` : ''}
-${videoInfo.url ? `URL: ${videoInfo.url}` : ''}
+Description: "${videoInfo.description || ''}"
+Channel: "${videoInfo.channel || ''}"
+URL: "${videoInfo.url || ''}"
+Thumbnail Image: [Assume the tool can analyze the image]
 
-There is a high chance that the name of the movie/series will be present in the title or description itself. So give high weightage to them while deciding the result.
-Either way also use the image from the thumbnail to predict the movie/series information.
+Your task is to analyze this data and determine the source of the content, providing specific details based on whether it’s a TV show, a movie, or neither.
+Identification Process:
 
-Now, perform identification process in the following format
-If it's a TV SHOW episode:
+Prioritize Title and Description:
+
+The movie or series name is often explicitly mentioned in the title or description. Assign the highest weight to this information.
+
+
+Use Thumbnail Image:
+
+Analyze the thumbnail to confirm or clarify the textual data, especially when the title or description is vague.
+
+
+Consider Channel and URL:
+
+Use these as supplementary context, but prioritize title, description, and thumbnail.
+
+
+Determine the Source:
+
+If it’s a TV Show:
+Identify the show name.
+If possible, extract the season number, episode number, and episode title.
+If specific episode details are unavailable, note that they cannot be determined.
+
+
+If it’s a Movie:
+Identify the movie title.
+
+
+If it’s Neither:
+Confirm if the video is not from a movie or series.
+If there’s a strong resemblance or clear inspiration, suggest possible related movies or series.
+If it’s a meme or parody, state that it’s not a direct clip but may be inspired by a specific movie or series.
+
+
+
+
+Provide a Brief Explanation:
+
+For TV shows and movies, include a one-line, spoiler-free description.
+For neither, explain why it’s not from a movie or series and, if relevant, mention related content.
+
+
+
+Response Format:
+
+For TV Shows:
 - Show name
-- Season number
-- Episode number
-- Episode title
+- Season number (if identifiable)
+- Episode number (if identifiable)
+- Episode title (if identifiable)
 - Brief explanation
 
-If it's a MOVIE:
+
+For Movies:
 - Movie title
 - Brief explanation
 
-If it's NEITHER a TV show nor a movie, or you can't identify it:
-- Clearly state that you this video doesnot appear to be from any movie/ series
-- ONLY IF IT SEEMS REASONABLE, mention as Brief explanation what are some possible movies this could be
+
+For Neither:
+- This video does not appear to be from any movie or series
+- (Optional) Possible related movies or series
+- (If applicable) This is a meme or parody inspired by [movie/series name], not a direct clip
 
 
-The brief explanation should mention in one line about the movie/series without ANY SPOILERS.
-Do not make the response too long, just give the most relevant information and NEVER TALK about how you arrived at decision.`;
+
+Guidelines:
+
+Keep responses concise, focusing on the most relevant details.
+Ensure explanations are free of spoilers.
+Do not include any reasoning or decision-making process; only provide the final identification and explanation.
+
+`;
 
         // Prepare messages array (including image if available)
         const messages = [];
