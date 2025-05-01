@@ -1,5 +1,5 @@
 // Debug mode
-const DEBUG = true;
+const DEBUG = false;
 function debugLog(...args) {
     if (DEBUG) console.log("[SceneSniffer Content]", ...args);
 }
