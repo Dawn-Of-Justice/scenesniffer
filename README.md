@@ -4,6 +4,10 @@ ScreenSniffer is a Chrome extension that identifies whether a YouTube Shorts vid
 
 **Check out here for more info:** [https://dawn-of-justice.github.io/scenesniffer/](https://dawn-of-justice.github.io/scenesniffer/)
 
+**See it in action**
+
+[![Watch the video](https://img.youtube.com/vi/piaNw6tMTQA/maxresdefault.jpg)](https://youtu.be/piaNw6tMTQA)
+
 
 ## Features
 
