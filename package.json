@@ -1,7 +1,7 @@
 {
   "name": "scenesniffer",
   "version": "1.0.0",
-  "description": "A Chrome extension to identify movies and series(along with episode information) from YouTube Shorts with GPT4o using AIML API.",
+  "description": "A Chrome extension to identify movies and series(along with episode information) from YouTube Shorts with Gemini API.",
   "main": "src/background/background.js",
   "scripts": {
     "build": "echo 'Build script not defined'",
@@ -17,6 +17,8 @@
   "author": "Salo Soja Edwin, Arjun G Ravi",
   "license": "MIT",
   "dependencies": {
+    "@google/genai": "^0.12.0",
+    "@google/generative-ai": "^0.24.1",
     "axios": "^1.9.0"
   },
   "devDependencies": {
