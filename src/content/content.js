@@ -1,17 +1,26 @@
 // Debug mode
-const DEBUG = false;
+const DEBUG = true;
 function debugLog(...args) {
     if (DEBUG) console.log("[SceneSniffer Content]", ...args);
 }
 
 debugLog("Content script loaded");
 
+document.addEventListener('keydown', function(e) {
+    // Use Alt+I as shortcut for identification
+    if (e.altKey && e.key === 'i' && isYouTubeShorts(window.location.href)) {
+        analyzeCurrentVideo();
+    }
+});
+
+let lastPredictionResult = null;
+let lastVideoId = null;
+
 // Listen for navigation changes since YouTube Shorts use client-side routing
 let currentUrl = window.location.href;
 let iconAdded = false;
 
-// Create observer to detect URL changes and page updates
-const observer = new MutationObserver(() => {
+const observer = new MutationObserver((mutations) => {
     // Check if URL changed
     if (window.location.href !== currentUrl) {
         currentUrl = window.location.href;
@@ -19,19 +28,55 @@ const observer = new MutationObserver(() => {
         
         if (isYouTubeShorts(currentUrl)) {
             debugLog("Detected YouTube Shorts URL");
-            setTimeout(addAnalyzeIcon, 1000);
+            // Only add the analyze button, don't remove the results
+            setTimeout(() => {
+                // Only add the analyze icon, don't touch the results container
+                const existingButton = document.getElementById('scenecope-analyze-btn');
+                if (!existingButton) {
+                    addAnalyzeIcon();
+                }
+                
+                // If we have a previous result, update the label to show it's from a previous video
+                if (lastPredictionResult && document.getElementById('shorts-identifier-result')) {
+                    // Add "Previous video" label if this is a different video
+                    const currentVideoId = extractVideoId(window.location.href);
+                    if (currentVideoId !== lastVideoId) {
+                        const resultContainer = document.getElementById('shorts-identifier-result');
+                        if (resultContainer) {
+                            // Target the header section specifically instead of the first div
+                            const titleElement = resultContainer.querySelector('div[style*="display: flex"][style*="align-items: center"]');
+                            if (titleElement) {
+                                // Remove any existing "Previous video" text first
+                                titleElement.innerHTML = titleElement.innerHTML.replace(/ <span style="font-size: 12px; color: #AAAAAA;">\(Previous video\)<\/span>/, '');
+                                // Add the label right after the SceneSniffer text
+                                const span = titleElement.querySelector('span');
+                                if (span) {
+                                    span.insertAdjacentHTML('afterend', ' <span style="font-size: 12px; color: #AAAAAA; margin-left: 5px;">(Previous video)</span>');
+                                }
+                            }
+                        }
+                    }
+                }
+            }, 1000);
         } else {
-            removeAnalyzeIcon();
+            // If not on shorts, we can safely remove the button
+            removeAnalyzeButton();
         }
     } 
     
-    // This helps when navigating between shorts without URL change
-    if (isYouTubeShorts(window.location.href) && !iconAdded) {
+    // Only check for DOM changes in relevant containers
+    const shortsContainer = document.querySelector('#shorts-container') || 
+                           document.querySelector('ytd-shorts') ||
+                           document.querySelector('#shorts-inner-container');
+                           
+    if (shortsContainer && isYouTubeShorts(window.location.href) && !iconAdded) {
         setTimeout(addAnalyzeIcon, 1000);
     }
 });
 
-observer.observe(document, { subtree: true, childList: true });
+// Observe only relevant parts of the DOM
+observer.observe(document.body, { subtree: false, childList: true });
+if (document.head) observer.observe(document.head, { subtree: false, childList: true });
 
 // Initial check
 if (isYouTubeShorts(window.location.href)) {
@@ -105,16 +150,23 @@ function addAnalyzeIcon() {
 
 // Remove the analyze icon
 function removeAnalyzeIcon() {
+    removeAnalyzeButton();
+    
+    // Also remove any results container when explicitly removing both
+    const existingContainer = document.getElementById('shorts-identifier-result');
+    if (existingContainer) {
+        existingContainer.remove();
+        lastPredictionResult = null;
+        lastVideoId = null;
+    }
+}
+
+// Modify to only remove the button, not the results
+function removeAnalyzeButton() {
     const existingButton = document.getElementById('scenecope-analyze-btn');
     if (existingButton) {
         existingButton.remove();
         iconAdded = false;
-    }
-    
-    // Also remove any results container
-    const existingContainer = document.getElementById('shorts-identifier-result');
-    if (existingContainer) {
-        existingContainer.remove();
     }
 }
 
@@ -142,7 +194,7 @@ async function analyzeCurrentVideo() {
               }
               
               if (response.result) {
-                  displayResult(response.result);
+                  displayResult(response.result, episodeInfo); // Pass episodeInfo as second parameter
                   return;
               }
               
@@ -221,13 +273,17 @@ function extractEpisodeInfo() {
             videoTitle = document.title.replace(" - YouTube", "").trim();
         }
 
+        // Extract thumbnail URL for better identification
+        const thumbnailUrl = videoId ? `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg` : null;
+
         if (videoTitle || videoId) {
             return {
                 title: videoTitle || "Unknown Title",
                 description: videoDescription || "",
                 channel: channelName || "Unknown Channel",
                 url: window.location.href,
-                videoId: videoId
+                videoId: videoId,
+                thumbnailUrl: thumbnailUrl  // Add this line
             };
         }
     } catch (error) {
@@ -404,7 +460,11 @@ function styleYouTubeCard(element) {
     element.style.alignItems = 'center'; // Center align items vertically
 }
 
-const displayResult = (result) => {
+const displayResult = (result, episodeInfo) => {
+    // Store the last result and video ID
+    lastPredictionResult = result;
+    lastVideoId = episodeInfo?.videoId || extractVideoId(window.location.href);
+    
     // Remove any existing result container
     const existingContainer = document.getElementById('shorts-identifier-result');
     if (existingContainer) {
@@ -420,10 +480,10 @@ const displayResult = (result) => {
     styleYouTubeCard(resultContainer);
     
     // Override flex display to allow for better content organization
-    resultContainer.style.display = 'block';
+    resultContainer.style.display = 'flex';
+    resultContainer.style.flexDirection = 'column';
     resultContainer.style.maxWidth = '320px';
     resultContainer.style.maxHeight = '300px';
-    resultContainer.style.overflowY = 'auto';
     resultContainer.style.padding = '16px';
     resultContainer.style.animation = 'scenecope-fade-in 0.3s ease-in-out';
     
@@ -453,6 +513,11 @@ const displayResult = (result) => {
     title.style.display = 'flex';
     title.style.alignItems = 'center';
     title.style.fontSize = '15px';
+    
+    // Add SceneSniffer logo with optional "Previous video" indicator
+    const currentVideoId = extractVideoId(window.location.href);
+    const isPreviousVideo = currentVideoId !== lastVideoId;
+    
     title.innerHTML = `
         <svg xmlns="http://www.w3.org/2000/svg" height="18" width="18" viewBox="0 0 24 24" fill="currentColor">
             <path d="M20 6h-5.586l2.293-2.293-1.414-1.414L12 5.586 8.707 2.293 7.293 3.707 9.586 6H4c-1.103 0-2 .897-2 2v10c0 1.103.897 2 2 2h16c1.103 0 2-.897 2-2V8c0-1.103-.897-2-2-2zM4 18V8h16l.002 10H4z"/>
@@ -460,7 +525,15 @@ const displayResult = (result) => {
             <path d="M9 15h2v2H9z"/>
         </svg>
         <span style="font-weight:600;">SceneSniffer</span>
+        ${isPreviousVideo ? '<span style="font-size: 12px; color: #AAAAAA; margin-left: 5px;">(Previous video)</span>' : ''}
     `;
+    
+    // Create a scrollable content area
+    const contentWrapper = document.createElement('div');
+    contentWrapper.style.overflow = 'auto'; // This area can scroll
+    contentWrapper.style.flex = '1';
+    contentWrapper.style.marginRight = '-8px'; // Offset scrollbar
+    contentWrapper.style.paddingRight = '8px'; // Add padding for scrollbar
     
     // Content styling with YouTube-like formatting
     const content = document.createElement('div');
@@ -475,30 +548,18 @@ const displayResult = (result) => {
         .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
         .replace(/\*(.*?)\*/g, '<em>$1</em>')
         
-        // Check if we already have bullet points
-        .replace(/•\s+/g, '') // Remove existing bullets
+        // Remove leading dashes and add proper formatting
+        .replace(/^-\s*(Movie title)[\s:]*/gim, '<strong style="color:#AAAAAA">Movie title:</strong> ')
+        .replace(/^-\s*(TV Show|Show name)[\s:]*/gim, '<strong style="color:#AAAAAA">Show name:</strong> ')
+        .replace(/^-\s*(Season)[\s:]*/gim, '<strong style="color:#AAAAAA">Season:</strong> ')
+        .replace(/^-\s*(Episode)[\s:]*/gim, '<strong style="color:#AAAAAA">Episode:</strong> ')
+        .replace(/^-\s*(Title)[\s:]*/gim, '<strong style="color:#AAAAAA">Title:</strong> ')
+        .replace(/^-\s*(Year|Release year)[\s:]*/gim, '<strong style="color:#AAAAAA">Year:</strong> ')
+        .replace(/^-\s*(Director)[\s:]*/gim, '<strong style="color:#AAAAAA">Director:</strong> ')
+        .replace(/^-\s*(Explanation|Brief explanation)[\s:]*/gim, '<strong style="color:#AAAAAA">Explanation:</strong> ')
         
-        // TV Show format replacements
-        .replace(/Show name:/gi, '<strong style="color:#AAAAAA">Show name:</strong> ')
-        .replace(/Season number:/gi, '<strong style="color:#AAAAAA">Season:</strong> ')
-        .replace(/Season:/gi, '<strong style="color:#AAAAAA">Season:</strong> ')
-        .replace(/Episode number:/gi, '<strong style="color:#AAAAAA">Episode:</strong> ')
-        .replace(/Episode:/gi, '<strong style="color:#AAAAAA">Episode:</strong> ')
-        .replace(/Episode title:/gi, '<strong style="color:#AAAAAA">Title:</strong> ')
-        
-        // Movie format replacements
-        .replace(/Movie title:/gi, '<strong style="color:#AAAAAA">Movie:</strong> ')
-        .replace(/Release year:/gi, '<strong style="color:#AAAAAA">Year:</strong> ')
-        .replace(/Director:/gi, '<strong style="color:#AAAAAA">Director:</strong> ')
-        
-        // Content type for unidentified content
-        .replace(/Content type:/gi, '<strong style="color:#AAAAAA">Content type:</strong> ')
-        
-        // Common replacements
-        .replace(/Brief explanation:/gi, '<strong style="color:#AAAAAA">Explanation:</strong> ')
-        
-        // Remove any standalone asterisks
-        .replace(/^\s*\*\s*/gm, '');
+        // Handle any remaining bullet points
+        .replace(/^-\s*/gim, '• ');
 
     // Create a compact display with minimal spacing between items
     const lines = formattedResult.split('\n');
@@ -508,6 +569,9 @@ const displayResult = (result) => {
 
     // Join with minimal spacing - no double breaks
     content.innerHTML = filteredLines.join('<br>');
+    
+    // Add content to the scrollable wrapper
+    contentWrapper.appendChild(content);
     
     // Add YouTube-style close button
     const closeButton = document.createElement('div');
@@ -549,9 +613,38 @@ const displayResult = (result) => {
         }
     `;
     
+    // Create a container for the button that sits OUTSIDE the scroll area
+    const buttonContainer = document.createElement('div');
+    buttonContainer.style.marginTop = '12px';
+    buttonContainer.style.display = isPreviousVideo ? 'block' : 'none';
+    
+    // Add a "New Analysis" button to allow for analyzing the current video
+    const newAnalysisButton = document.createElement('button');
+    newAnalysisButton.textContent = 'Analyze This Video';
+    newAnalysisButton.style.backgroundColor = '#FF0000';
+    newAnalysisButton.style.color = 'white';
+    newAnalysisButton.style.border = 'none';
+    newAnalysisButton.style.padding = '8px 12px';
+    newAnalysisButton.style.borderRadius = '18px';
+    newAnalysisButton.style.cursor = 'pointer';
+    newAnalysisButton.style.fontWeight = '500';
+    newAnalysisButton.style.fontSize = '12px';
+    newAnalysisButton.style.display = 'block';
+    newAnalysisButton.style.width = '100%';
+    
+    newAnalysisButton.addEventListener('click', () => {
+        analyzeCurrentVideo();
+    });
+    
+    // Only show button for different videos
+    if (isPreviousVideo) {
+        buttonContainer.appendChild(newAnalysisButton);
+    }
+    
     resultContainer.appendChild(closeButton);
     resultContainer.appendChild(title);
-    resultContainer.appendChild(content);
+    resultContainer.appendChild(contentWrapper);
+    resultContainer.appendChild(buttonContainer); // Add button container outside scroll area
     document.body.appendChild(resultContainer);
 };
 
@@ -656,3 +749,9 @@ const displayError = (errorMessage) => {
     errorContainer.appendChild(retryButton);
     document.body.appendChild(errorContainer);
 };
+
+// Extract video ID from URL
+function extractVideoId(url) {
+    const match = url.match(/shorts\/([a-zA-Z0-9_-]+)/);
+    return match ? match[1] : null;
+}

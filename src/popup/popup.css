@@ -9,17 +9,18 @@ body {
 
 .container {
     padding: 13px;
-    box-sizing: border-box; /* Include padding in the total dimensions */
-    height: 100%; /* Ensure the container uses the full height */
+    box-sizing: border-box; 
+    height: 100%;
     overflow: hidden;
 }
 
 .logo-container {
     display: flex;
+    justify-content: space-between;
     align-items: center;
-    margin-bottom: 16px;
-    padding-bottom: 12px;
-    border-bottom: 1px solid #303030;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #333;
+    margin-bottom: 15px;
 }
 
 .logo {
@@ -31,7 +32,7 @@ body {
 
 .logo svg {
     margin-right: 8px;
-    color: #FF0000; /* YouTube red */
+    color: #FF0000;
 }
 
 h2 {
@@ -72,11 +73,11 @@ input {
 
 input:focus {
     outline: none;
-    border-color: #3EA6FF; /* YouTube blue */
+    border-color: #3EA6FF; 
 }
 
 button {
-    background-color: #3EA6FF; /* YouTube blue */
+    background-color: #3EA6FF; 
     color: #0F0F0F;
     border: none;
     padding: 10px 16px;
@@ -88,16 +89,16 @@ button {
 }
 
 button:hover {
-    background-color: #65B8FF; /* Lighter blue */
+    background-color: #65B8FF; 
 }
 
 .primary-button {
-    background-color: #FF0000; /* YouTube red */
+    background-color: #FF0000;
     color: white;
 }
 
 .primary-button:hover {
-    background-color: #CC0000; /* Darker red */
+    background-color: #CC0000;
 }
 
 .small-button {
@@ -151,7 +152,7 @@ li {
 }
 
 a {
-    color: #3EA6FF; /* YouTube blue */
+    color: #3EA6FF; 
     text-decoration: none;
 }
 
@@ -186,7 +187,7 @@ a:hover {
 }
 
 #result-container {
-    display: none; /* Initially hidden */
+    display: none; 
     padding: 10px;
     margin-top: 10px;
     background-color: #f8d7da;
@@ -195,20 +196,6 @@ a:hover {
     border-radius: 5px;
     font-size: 14px;
     text-align: center;
-}
-
-.header-with-back {
-    display: flex;
-    align-items: center;
-    margin-bottom: 10px;
-    position: relative;
-}
-
-.header-with-back h2 {
-    margin: 0;
-    flex: 1;
-    text-align: center;
-    font-size: 16px;
 }
 
 .back-arrow-button {
@@ -224,7 +211,6 @@ a:hover {
     transition: background-color 0.2s;
 }
 
-
 .back-arrow-button:hover {
     background-color: rgba(255, 255, 255, 0.1);
 }
@@ -235,19 +221,39 @@ a:hover {
     margin: 0 0 10px 0;
 }
 
-/* Add this CSS to your content script's injected styles */
-.scenecope-result-container {
-    position: fixed; /* Fix it relative to the viewport */
-    top: 20px; /* Adjust the vertical position */
-    right: 20px; /* Adjust the horizontal position */
-    z-index: 9999; /* Ensure it appears above other elements */
-    background-color: #212121; /* Match YouTube's dark theme */
+.api-key-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.api-key-display {
+    display: flex;
+    align-items: center;
+    position: relative;
+    width: 100%;
+}
+
+.api-key-display input {
+    padding-right: 40px;
+}
+
+.icon-button {
+    background: none;
+    border: none;
+    color: #AAAAAA;
+    cursor: pointer;
+    padding: 5px;
+    border-radius: 50%;
+    transition: all 0.2s;
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.icon-button:hover {
     color: #FFFFFF;
-    padding: 12px;
-    border-radius: 8px;
-    border: 1px solid #303030;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-    max-width: 300px;
-    font-size: 14px;
-    line-height: 1.5;
+    background-color: rgba(255, 255, 255, 0.1);
 }

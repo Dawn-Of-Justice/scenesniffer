@@ -1,63 +1,28 @@
-const DEBUG = false;
+const DEBUG = true; 
 function debugLog(...args) {
     if (DEBUG) console.log("[SceneSniffer BG]", ...args);
 }
 
 debugLog("Background service worker loaded");
 
-const AUTH_TOKEN_KEY = 'aiml_api_key'; // Updated key name
+const AUTH_TOKEN_KEY = 'gemini_api_key';
 
-const identifyEpisodeWithAIML = async (videoInfo, apiKey) => {
+const identifyEpisodeWithGemini = async (videoInfo, apiKey) => {
     if (!apiKey) {
         throw new Error('No API key provided');
     }
     
     try {
-        debugLog("Sending request to AIML API for video:", videoInfo.url);
+        debugLog("Sending request to Gemini API for video:", videoInfo.url);
         
-        // Get YouTube video thumbnail
-        const videoId = extractVideoId(videoInfo.url);
-        let thumbnailData = null;
+        // Create a more detailed prompt that includes all metadata
+        const promptText = `You are a tool which lets the user know which movie or series a YouTube Short is from.
         
-        // Try to get the thumbnail image data
-        if (videoId) {
-            try {
-                // Try multiple thumbnail formats in case maxresdefault isn't available
-                const thumbnailFormats = [
-                    `https://i.ytimg.com/vi/${videoId}/maxresdefault.jpg`,
-                    `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`,
-                    `https://i.ytimg.com/vi/${videoId}/mqdefault.jpg`
-                ];
-                
-                // Try each thumbnail format until one works
-                for (const thumbnailUrl of thumbnailFormats) {
-                    const response = await fetch(thumbnailUrl);
-                    if (response.ok) {
-                        const blob = await response.blob();
-                        thumbnailData = await blobToBase64(blob);
-                        break; // Exit loop once we have a thumbnail
-                    }
-                }
-            } catch (e) {
-                debugLog("Failed to get thumbnail:", e);
-                // Continue without image if we can't get it
-            }
-        }
-        
-        // Build request following the AIML API structure
-        const url = 'https://api.aimlapi.com/v1/chat/completions';
-        
-        // Construct the prompt
-        const promptText = `You are a tool which lets the user know which movie or series a youtube short is from. 
-You have the following data:
-                            
-Title: "${videoInfo.title}"
-${videoInfo.description ? `Description: "${videoInfo.description}"` : ''}
-${videoInfo.channel ? `Channel: "${videoInfo.channel}"` : ''}
-${videoInfo.url ? `URL: ${videoInfo.url}` : ''}
+I'm providing you with:
+1. The YouTube video title: "${videoInfo.title || "Unknown"}"
+2. The video description: "${videoInfo.description || "No description"}"
 
-There is a high chance that the name of the movie/series will be present in the title or description itself. So give high weightage to them while deciding the result.
-Either way also use the image from the thumbnail to predict the movie/series information.
+Please analyze this information carefully and identify if the YouTube Short is from a movie or TV series.
 
 Now, perform identification process in the following format
 If it's a TV SHOW episode:
@@ -72,67 +37,60 @@ If it's a MOVIE:
 - Brief explanation
 
 If it's NEITHER a TV show nor a movie, or you can't identify it:
-- Clearly state that you this video doesnot appear to be from any movie/ series
+- Clearly state that this video does not appear to be from any movie/series
 - ONLY IF IT SEEMS REASONABLE, mention as Brief explanation what are some possible movies this could be
 
-
-The brief explanation should mention in one line about the movie/series without ANY SPOILERS. Make sure to describe in such a fashion that it will prompt the user to watch it.
+The brief explanation should mention in one line about this without ANY SPOILERS. Make sure to describe in such a fashion that it will prompt the user to watch it.
 Do not make the response too long, just give the most relevant information and NEVER TALK about how you arrived at decision.`;
 
-        // Prepare messages array (including image if available)
-        const messages = [];
-        
-        // Add system message
-        messages.push({
-            role: "system",
-            content: "You are a helpful assistant that identifies TV shows, movies, and other video content."
-        });
-        
-        // Add user message with image if available
-        if (thumbnailData) {
-            messages.push({
-                role: "user",
-                content: [
-                    {
-                        type: "image_url",
-                        image_url: {
-                            url: `data:image/jpeg;base64,${thumbnailData}`
+        // Keep the existing structure with fileData
+        const requestData = {
+            contents: [
+                {
+                    role: "user",
+                    parts: [
+                        {
+                            fileData: {
+                                mimeType: "video/*",
+                                fileUri: videoInfo.url
+                            }
+                        },
+                        {
+                            text: promptText
                         }
-                    },
-                    {
-                        type: "text",
-                        text: promptText
-                    }
-                ]
-            });
-        } else {
-            messages.push({
-                role: "user",
-                content: promptText
-            });
-        }
-
-        const requestBody = {
-            model: "chatgpt-4o-latest",
-            max_tokens: 300,
-            temperature: .1,
-            messages: messages
+                    ]
+                }
+            ],
+            generationConfig: {
+                "temperature": 0.1,
+                responseMimeType: "text/plain"
+            }
         };
 
-        // Add retry mechanism for reliability
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+        
+        debugLog("Using URL:", url);
+        debugLog("Request data:", JSON.stringify(requestData, null, 2));
+
+        // Add retry mechanism
         let retries = 3;
         let response = null;
         
         while (retries > 0) {
             try {
+                // Call Gemini API directly
                 response = await fetch(url, {
                     method: 'POST',
                     headers: {
-                        'Authorization': `Bearer ${apiKey}`,
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify(requestBody)
+                    body: JSON.stringify(requestData)
                 });
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`API request failed: ${response.status} - ${errorText}`);
+                }
                 
                 break; // Success, exit retry loop
             } catch (error) {
@@ -143,33 +101,21 @@ Do not make the response too long, just give the most relevant information and N
             }
         }
         
-        if (!response.ok) {
-            let errorData;
-            try {
-                errorData = await response.json();
-            } catch (e) {
-                errorData = { error: { message: `HTTP error ${response.status}` } };
-            }
-            throw new Error(`API error: ${errorData.error?.message || response.statusText || 'Unknown error'}`);
+        const result = await response.json();
+        
+        if (!result || !result.candidates || !result.candidates[0]) {
+            throw new Error("Invalid response from Gemini API");
         }
+        
+        const resultText = result.candidates[0].content.parts[0].text;
+        debugLog("Full API response:", result);
 
-        const data = await response.json();
-        debugLog("Full API response:", data);
-
-        // Extract content from the AIML API response format
-        if (data.choices && data.choices.length > 0) {
-            const resultText = data.choices[0].message.content;
-            
-            return {
-                result: resultText,
-                raw: data
-            };
-        } else {
-            debugLog("Unexpected response format:", data);
-            throw new Error("Unexpected response format from AIML API");
-        }
+        return {
+            result: resultText,
+            raw: result
+        };
     } catch (error) {
-        debugLog('Error calling AIML API:', error);
+        debugLog('Error calling Gemini API:', error);
         throw error;
     }
 };
@@ -179,7 +125,7 @@ chrome.runtime.onInstalled.addListener(() => {
     console.log('YouTube Shorts Identifier extension installed.');
 });
 
-// Add this function to the background.js file to properly handle errors
+// Function to properly handle errors
 function handleRuntimeError(callback) {
     if (chrome.runtime.lastError) {
         console.error("Runtime error:", chrome.runtime.lastError);
@@ -188,7 +134,7 @@ function handleRuntimeError(callback) {
     return false;
 }
 
-// Update the message listener to use this handler
+
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     debugLog("Received message:", request);
     
@@ -239,6 +185,20 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             });
         
         return true;
+    } else if (request.action === 'getApiKey') {
+        debugLog("Getting API key for display");
+        
+        getApiKey()
+            .then(apiKey => {
+                debugLog("API key retrieved successfully");
+                sendResponse({ apiKey: apiKey });
+            })
+            .catch(error => {
+                debugLog("Error retrieving API key:", error);
+                sendResponse({ error: error.message });
+            });
+        
+        return true; // Required for async response
     }
 });
 
@@ -271,20 +231,20 @@ function getApiKey() {
     });
 }
 
-// Process video info and call AI API
+// Process video info and call Gemini API
 async function getEpisodeInfo(videoInfo) {
     try {
         debugLog("Getting episode info for:", videoInfo);
         
         const apiKey = await getApiKey();
         if (!apiKey) {
-            throw new Error('API key not found. Please set up your API key.');
+            throw new Error('API key not found. Please set up your Gemini API key.');
         }
         
         debugLog("Using API key:", apiKey.substring(0, 5) + '...');
         
-        // Call API with the video info (using the new function)
-        const result = await identifyEpisodeWithAIML(videoInfo, apiKey);
+        // Call Gemini API with the video info
+        const result = await identifyEpisodeWithGemini(videoInfo, apiKey);
         debugLog("API result:", result);
         return result;
     } catch (error) {
@@ -293,18 +253,16 @@ async function getEpisodeInfo(videoInfo) {
     }
 }
 
+// Utility functions remain the same
 function extractVideoId(url) {
-    // Extract YouTube video ID from various URL formats
     const match = url.match(/(?:shorts\/|v=|youtu.be\/)([^?&]+)/);
     return match ? match[1] : null;
 }
 
-// Add this utility function to convert blob to base64 string
 function blobToBase64(blob) {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.onloadend = () => {
-            // Extract the base64 data part from the data URL
             const base64data = reader.result.split(',')[1];
             resolve(base64data);
         };

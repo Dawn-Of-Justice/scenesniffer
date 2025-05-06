@@ -31,7 +31,7 @@ ScreenSniffer is a Chrome extension that identifies whether a YouTube Shorts vid
 ## Usage
 
 1. Click on the extension icon in the Chrome toolbar.
-2. Add the AIML API key into the API bar. The extension is now activated.
+2. Add the Google Studio API key into the API bar. The extension is now activated.
 3. Navigate to a YouTube Shorts video and click the extension icon to identify the episode.
 
 ## Contributing

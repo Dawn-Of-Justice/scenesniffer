@@ -20,8 +20,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             mainView.style.display = 'none';
         }
     } catch (error) {
+        // Log the actual error for debugging but show friendly message to user
         console.error('Error checking API key:', error);
-        setupMessage.textContent = 'Error initializing extension. Please reload.';
+        setupMessage.textContent = 'Something went wrong. Please try reloading the extension.';
     }
 
     // Set up event listeners for API key saving
@@ -29,7 +30,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const apiKey = document.getElementById('api-key').value.trim();
         
         if (!apiKey) {
-            setupMessage.textContent = 'Please enter a valid API key';
+            setupMessage.textContent = 'Please enter an API key';
             return;
         }
         
@@ -47,19 +48,59 @@ document.addEventListener('DOMContentLoaded', async () => {
                     mainView.style.display = 'block';
                 }, 1500);
             } else {
-                setupMessage.textContent = response.error || 'Failed to save API key';
+                // Generic error message instead of showing the specific error
+                console.error('Failed to save API key:', response.error);
+                setupMessage.textContent = 'Could not save API key. Please try again.';
             }
         } catch (error) {
             console.error('Error saving API key:', error);
-            setupMessage.textContent = 'Error saving API key. Please try again.';
+            setupMessage.textContent = 'Something went wrong. Please try again.';
         }
     });
 
     // Event listener for changing API key
-    document.getElementById('change-key').addEventListener('click', () => {
-        mainView.style.display = 'none';
-        setupView.style.display = 'block';
+    document.getElementById('change-key').addEventListener('click', async () => {
+        try {
+            // Get the existing API key
+            const response = await chrome.runtime.sendMessage({ action: 'getApiKey' });
+            
+            if (response && response.apiKey) {
+                // Set the masked API key in the input field
+                const apiKeyInput = document.getElementById('api-key');
+                apiKeyInput.type = 'password'; // Start with password type (masked)
+                apiKeyInput.value = response.apiKey;
+            }
+            
+            // Switch to setup view
+            mainView.style.display = 'none';
+            setupView.style.display = 'block';
+        } catch (error) {
+            console.error('Error retrieving API key:', error);
+        }
     });
+
+    // Toggle API key visibility
+    const toggleVisibilityBtn = document.getElementById('toggle-visibility');
+    if (toggleVisibilityBtn) {
+        toggleVisibilityBtn.addEventListener('click', function() {
+            const apiKeyInput = document.getElementById('api-key');
+            if (apiKeyInput.type === 'password') {
+                apiKeyInput.type = 'text';
+                toggleVisibilityBtn.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 7c2.76 0 5 2.24 5 5 0 .65-.13 1.26-.36 1.83l2.92 2.92c1.51-1.26 2.7-2.89 3.43-4.75-1.73-4.39-6-7.5-11-7.5-1.4 0-2.74.25-3.98.7l2.16 2.16C10.74 7.13 11.35 7 12 7zM2 4.27l2.28 2.28.46.46C3.08 8.3 1.78 10.02 1 12c1.73 4.39 6 7.5 11 7.5 1.55 0 3.03-.3 4.38-.84l.42.42L19.73 22 21 20.73 3.27 3 2 4.27zM7.53 9.8l1.55 1.55c-.05.21-.08.43-.08.65 0 1.66 1.34 3 3 3 .22 0 .44-.03.65-.08l1.55 1.55c-.67.33-1.41.53-2.2.53-2.76 0-5-2.24-5-5 0-.79.2-1.53.53-2.2zm4.31-.78l3.15 3.15.02-.16c0-1.66-1.34-3-3-3l-.17.01z"/>
+                    </svg>
+                `;
+            } else {
+                apiKeyInput.type = 'password';
+                toggleVisibilityBtn.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
+                    </svg>
+                `;
+            }
+        });
+    }
 
     const socialLinks = document.querySelectorAll('.social-links a');
     const identifyButton = document.getElementById('identify-button');
@@ -71,7 +112,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         identifyButton.addEventListener('click', async () => {
             const userInput = inputField.value.trim();
             if (!userInput) {
-                resultContainer.textContent = 'Please enter a valid YouTube Shorts link.';
+                resultContainer.textContent = 'Please enter a YouTube Shorts link.';
                 return;
             }
 
@@ -83,7 +124,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const videoId = videoIdMatch ? videoIdMatch[1] : null;
                 
                 if (!videoId) {
-                    resultContainer.textContent = 'Could not extract video ID from URL. Please enter a valid YouTube Shorts URL.';
+                    resultContainer.textContent = 'Please enter a valid YouTube Shorts URL.';
                     return;
                 }
                 
@@ -109,13 +150,16 @@ document.addEventListener('DOMContentLoaded', async () => {
                 if (response && response.result) {
                     resultContainer.innerHTML = response.result.replace(/\n/g, '<br>');
                 } else if (response && response.error) {
-                    resultContainer.textContent = `Error: ${response.error}`;
+                    // Log actual error but show generic message
+                    console.error('API error:', response.error);
+                    resultContainer.textContent = 'Something went wrong. Please try again.';
                 } else {
-                    resultContainer.textContent = 'Episode not found. Please try again with a different video.';
+                    resultContainer.textContent = 'Could not identify this video. Please try another clip.';
                 }
             } catch (error) {
+                // Log actual error but show generic message
                 console.error('Error identifying episode:', error);
-                resultContainer.textContent = `Error: ${error.message || 'Unknown error occurred'}`;
+                resultContainer.textContent = 'Something went wrong. Please try again later.';
             }
         });
     }
@@ -133,6 +177,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 });
 
+// Update the second event listener as well
 document.addEventListener('DOMContentLoaded', function () {
     const infoBox = document.getElementById('info-box');
     const resultContainer = document.getElementById('result-container');
@@ -145,9 +190,8 @@ document.addEventListener('DOMContentLoaded', function () {
         const url = inputField.value.trim();
 
         if (!url) {
-            // Replace alert with resultContainer update
-            resultContainer.textContent = 'Please enter a valid YouTube Shorts URL.';
-            resultContainer.style.display = 'block'; // Ensure the container is visible
+            resultContainer.textContent = 'Please enter a YouTube Shorts URL.';
+            resultContainer.style.display = 'block';
             return;
         }
 
@@ -158,24 +202,5 @@ document.addEventListener('DOMContentLoaded', function () {
         // Simulate loading
         resultContainer.textContent = 'Analyzing... Please wait.';
 
-        try {
-            // Replace this with your actual API call logic
-            const prediction = await simulatePrediction(url);
-
-            // Update the result text with the prediction
-            resultContainer.textContent = prediction;
-        } catch (error) {
-            resultContainer.textContent = 'An error occurred while analyzing the video.';
-            console.error(error);
-        }
     });
-
-    // Simulate a prediction process (replace this with your actual API call)
-    async function simulatePrediction(url) {
-        return new Promise((resolve) => {
-            setTimeout(() => {
-                resolve(`This is a prediction result for the video: ${url}`);
-            }, 2000); // Simulate a 2-second delay
-        });
-    }
 });
