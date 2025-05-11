@@ -16,32 +16,45 @@ const identifyEpisodeWithGemini = async (videoInfo, apiKey) => {
         debugLog("Sending request to Gemini API for video:", videoInfo.url);
         
         // Create a more detailed prompt that includes all metadata
-        const promptText = `You are a tool which lets the user know which movie or series a YouTube Short is from.
-        
-I'm providing you with:
-1. The YouTube video title: "${videoInfo.title || "Unknown"}"
-2. The video description: "${videoInfo.description || "No description"}"
+        const promptText = `You are an AI video content identifier that determines which movie or TV show a video clip is from.
 
-Please analyze this information carefully and identify if the YouTube Short is from a movie or TV series.
+        INPUT ANALYSIS:
+        First, analyze the full context of the video, including:
+        1. Visual elements: scenes, characters, settings, distinctive visuals
+        2. Audio elements: dialogue, music, sound effects
+        3. Text elements: title, description, captions, on-screen text
+        4. Video metadata: "${videoInfo.title || "Unknown"}" (title), "${videoInfo.description || "No description"}" (description)
 
-Now, perform identification process in the following format
-If it's a TV SHOW episode:
-- Show name
-- Season number
-- Episode number
-- Episode title
-- Brief explanation
+        IDENTIFICATION PROCESS:
+        Based on the complete analysis, identify the source content with high confidence.
 
-If it's a MOVIE:
-- Movie title
-- Brief explanation
+        OUTPUT FORMAT:
+        If it's a TV SHOW:
+        - Show: [Name]
+        - Season: [Number or "Special"]
+        - Episode: [Number or "N/A" for specials]
+        - Title: [Episode title if identifiable]
+        - Context: [ONE brief sentence about the scene without spoilers]
+        - Why Watch: [ONE compelling reason to watch the show]
 
-If it's NEITHER a TV show nor a movie, or you can't identify it:
-- Clearly state that this video does not appear to be from any movie/series
-- ONLY IF IT SEEMS REASONABLE, mention as Brief explanation what are some possible movies this could be
+        If it's a MOVIE:
+        - Film: [Title]
+        - Year: [Release year if identifiable]
+        - Context: [ONE brief sentence about the scene without spoilers]
+        - Why Watch: [ONE compelling reason to watch the film]
 
-The brief explanation should mention in one line about this without ANY SPOILERS. Make sure to describe in such a fashion that it will prompt the user to watch it.
-Do not make the response too long, just give the most relevant information and NEVER TALK about how you arrived at decision.`;
+        If UNCERTAIN but have strong candidates:
+        - Possible Source: [Most likely candidate]
+        - Alternatives: [Up to 2 other possibilities]
+        - Reasoning: [ONE sentence explaining the ambiguity]
+
+        If CANNOT IDENTIFY:
+        - Status: Unidentified
+        - Category: [Genre or content type if discernible]
+        - Similar To: [Up to 2 similar works if applicable]
+
+        Keep responses concise and engaging. Focus on accuracy, not length. Never include spoilers or detailed plot points.
+        `;
 
         // Keep the existing structure with fileData
         const requestData = {
