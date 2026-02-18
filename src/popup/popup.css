@@ -1,26 +1,26 @@
+/* ── Base ── */
 body {
     font-family: 'Roboto', 'YouTube Sans', Arial, sans-serif;
     margin: 0;
     padding: 0;
-    background-color: #0F0F0F; 
+    background-color: #0F0F0F;
     color: #FFFFFF;
     width: 350px;
 }
 
 .container {
-    padding: 13px;
-    box-sizing: border-box; 
-    height: 100%;
-    overflow: hidden;
+    padding: 10px 13px 8px;
+    box-sizing: border-box;
 }
 
+/* ── Header ── */
 .logo-container {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding-bottom: 10px;
-    border-bottom: 1px solid #333;
-    margin-bottom: 15px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #303030;
+    margin-bottom: 10px;
 }
 
 .logo {
@@ -28,73 +28,91 @@ body {
     align-items: center;
     font-size: 18px;
     font-weight: 500;
+    gap: 8px;
 }
 
 .logo svg {
-    margin-right: 8px;
     color: #FF0000;
 }
 
+/* ── Typography ── */
 h2 {
     color: #FFFFFF;
-    margin-top: 0;
-    font-size: 16px;
+    margin: 0 0 8px 0;
+    font-size: 15px;
     font-weight: 500;
 }
 
-h3, h4 {
-    font-size: 16px;
-    margin-bottom: 8px;
+h3,
+h4 {
+    font-size: 13px;
+    margin-bottom: 6px;
     font-weight: 500;
     color: #AAAAAA;
 }
 
 p {
-    font-size: 14px;
-    margin: 8px 0;
+    font-size: 13px;
+    margin: 6px 0;
     color: #AAAAAA;
 }
 
+/* ── Forms ── */
 .form-group {
-    margin: 15px 0;
+    margin: 8px 0;
+}
+
+label {
+    display: block;
+    font-size: 12px;
+    color: #AAAAAA;
+    margin-bottom: 4px;
+    font-weight: 500;
 }
 
 input {
     width: 100%;
-    padding: 10px 12px;
-    margin-bottom: 12px;
-    background-color: #212121;
+    padding: 9px 12px;
+    margin-bottom: 8px;
+    background-color: #1A1A1A;
     border: 1px solid #303030;
-    border-radius: 4px;
+    border-radius: 6px;
     box-sizing: border-box;
     color: #FFFFFF;
-    font-size: 14px;
+    font-size: 13px;
+    transition: border-color 0.2s;
 }
 
 input:focus {
     outline: none;
-    border-color: #3EA6FF; 
+    border-color: #3EA6FF;
 }
 
+input::placeholder {
+    color: #666;
+}
+
+/* ── Buttons ── */
 button {
-    background-color: #3EA6FF; 
+    background-color: #3EA6FF;
     color: #0F0F0F;
     border: none;
-    padding: 10px 16px;
+    padding: 9px 16px;
     border-radius: 18px;
     cursor: pointer;
     font-weight: 500;
-    font-size: 14px;
-    transition: background-color 0.2s;
+    font-size: 13px;
+    transition: background-color 0.2s, opacity 0.2s;
 }
 
 button:hover {
-    background-color: #65B8FF; 
+    background-color: #65B8FF;
 }
 
 .primary-button {
     background-color: #FF0000;
     color: white;
+    width: 100%;
 }
 
 .primary-button:hover {
@@ -102,112 +120,84 @@ button:hover {
 }
 
 .small-button {
-    padding: 6px 10px;
-    font-size: 12px;
-    margin-left: 8px;
-    border-radius: 14px;
+    padding: 4px 10px;
+    font-size: 11px;
+    margin-left: auto;
+    border-radius: 12px;
+    background-color: #303030;
+    color: #AAAAAA;
 }
 
+.small-button:hover {
+    background-color: #404040;
+    color: #FFFFFF;
+}
+
+/* ── Message ── */
 .message {
-    color: #FF0000;
     font-size: 12px;
-    min-height: 16px;
-    margin-top: 8px;
+    min-height: 14px;
+    margin-top: 6px;
+    transition: color 0.2s;
 }
 
+.message-error {
+    color: #FF4444;
+}
+
+.message-success {
+    color: #4CAF50;
+}
+
+.message-info {
+    color: #AAAAAA;
+}
+
+/* ── Status Panel ── */
 .status {
-    background-color: #212121;
-    padding: 12px;
+    background-color: #1A1A1A;
+    padding: 10px 12px;
     border-radius: 8px;
-    margin: 12px 0;
+    margin-bottom: 10px;
     border: 1px solid #303030;
 }
 
 .status-item {
     display: flex;
     align-items: center;
-    margin: 5px 0;
+    padding: 3px 0;
+}
+
+.status-item+.status-item {
+    border-top: 1px solid #252525;
+    margin-top: 3px;
+    padding-top: 6px;
 }
 
 .label {
     font-weight: 500;
-    width: 70px;
-    color: #AAAAAA;
+    min-width: 65px;
+    font-size: 12px;
+    color: #888;
 }
 
 .value {
     flex-grow: 1;
+    font-size: 12px;
     color: #FFFFFF;
 }
 
-ol {
-    margin-left: -10px;
-    font-size: 14px;
-    color: #AAAAAA;
-    padding-left: 24px;
-}
-
-li {
-    margin-bottom: 6px;
-}
-
-a {
-    color: #3EA6FF; 
-    text-decoration: none;
-}
-
-a:hover {
-    text-decoration: underline;
-}
-
-.socials {
-    margin-top: 20px;
-    border-top: 1px solid #303030;
-}
-
-.social-links {
-    display: flex;
-    gap: 10px;
-    margin-top: 8px;
-}
-
-.social-icon {
-    display: flex;
-    align-items: center;
-    color: #AAAAAA;
-    font-size: 14px;
-}
-
-.social-icon svg {
-    margin-right: 4px;
-}
-
-.social-icon:hover {
-    color: #3EA6FF;
-}
-
-#result-container {
-    display: none; 
-    padding: 10px;
-    margin-top: 10px;
-    background-color: #f8d7da;
-    color: #ffffff;
-    border: 1px solid #f5c6cb;
-    border-radius: 5px;
-    font-size: 14px;
-    text-align: center;
-}
-
+/* ── Setup View ── */
 .back-arrow-button {
     background: none;
     border: none;
     cursor: pointer;
-    padding: 5px;
+    padding: 4px;
     display: flex;
     align-items: center;
     justify-content: center;
     border-radius: 50%;
-    margin-bottom: 10px; 
+    margin-bottom: 6px;
     transition: background-color 0.2s;
 }
 
@@ -217,15 +207,37 @@ a:hover {
 
 .setup-heading {
     text-align: left;
-    font-size: 18px;
-    margin: 0 0 10px 0;
+    font-size: 16px;
+    margin: 0 0 6px 0;
 }
 
+ol {
+    margin: 4px 0 6px 0;
+    font-size: 12px;
+    color: #AAAAAA;
+    padding-left: 20px;
+}
+
+li {
+    margin-bottom: 3px;
+    line-height: 1.4;
+}
+
+a {
+    color: #3EA6FF;
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+/* ── API Key Input ── */
 .api-key-container {
     display: flex;
     align-items: center;
     gap: 8px;
-    margin-bottom: 12px;
+    margin-bottom: 8px;
 }
 
 .api-key-display {
@@ -256,4 +268,126 @@ a:hover {
 .icon-button:hover {
     color: #FFFFFF;
     background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* ── Tip Box ── */
+.tip-box {
+    background-color: rgba(62, 166, 255, 0.08);
+    border: 1px solid rgba(62, 166, 255, 0.2);
+    border-radius: 6px;
+    padding: 7px 10px;
+    margin: 6px 0 8px;
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    font-size: 11px;
+    color: #999;
+    line-height: 1.4;
+}
+
+.tip-box strong {
+    color: #3EA6FF;
+}
+
+.tip-icon {
+    font-size: 13px;
+    flex-shrink: 0;
+}
+
+/* ── Cards (info-box, result-container) ── */
+.card {
+    background-color: #1A1A1A;
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin-top: 8px;
+    border: 1px solid #303030;
+}
+
+.card-title {
+    margin: 0 0 6px 0;
+    font-size: 12px;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.card-list {
+    margin: 0;
+    padding-left: 18px;
+    font-size: 12px;
+}
+
+.card-list li {
+    margin-bottom: 2px;
+}
+
+.card-hint {
+    font-size: 11px;
+    margin: 6px 0 0 0;
+    color: #666;
+}
+
+#result-text {
+    font-size: 13px;
+    color: #FFFFFF;
+    text-align: left;
+    margin: 0;
+    line-height: 1.5;
+}
+
+/* ── Status Indicators ── */
+.tier-paid {
+    color: #FFD700;
+    font-weight: 500;
+}
+
+.tier-free {
+    color: #AAAAAA;
+    font-weight: 400;
+}
+
+.status-active {
+    color: #4CAF50;
+    font-weight: 500;
+}
+
+.status-expired {
+    color: #FF4444;
+    font-weight: 500;
+}
+
+.status-invalid {
+    color: #FF8800;
+    font-weight: 500;
+}
+
+.status-checking {
+    color: #888;
+    font-style: italic;
+}
+
+/* ── Social Links ── */
+.socials {
+    margin-top: 10px;
+    padding-top: 8px;
+    border-top: 1px solid #252525;
+}
+
+.social-links {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+}
+
+.social-icon {
+    display: flex;
+    align-items: center;
+    color: #666;
+    font-size: 12px;
+    gap: 4px;
+    transition: color 0.2s;
+}
+
+.social-icon:hover {
+    color: #3EA6FF;
 }

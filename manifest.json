@@ -1,12 +1,12 @@
 {
   "manifest_version": 3,
   "name": "SceneSniffer",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "Identifies which TV show episode or movie a YouTube Shorts clip is from using Gemini API.",
   "permissions": [
-    "storage", 
+    "storage",
     "activeTab",
-    "scripting" 
+    "scripting"
   ],
   "host_permissions": [
     "https://www.youtube.com/*",
@@ -25,10 +25,14 @@
   },
   "content_scripts": [
     {
-      "matches": ["https://www.youtube.com/*"],
-      "js": ["src/content/content.js"],
-      "run_at": "document_idle", 
-      "all_frames": false  
+      "matches": [
+        "https://www.youtube.com/*"
+      ],
+      "js": [
+        "src/content/content.js"
+      ],
+      "run_at": "document_idle",
+      "all_frames": false
     }
   ],
   "icons": {
@@ -38,8 +42,12 @@
   },
   "web_accessible_resources": [
     {
-      "resources": ["icons/*"],
-      "matches": ["https://www.youtube.com/*"]
+      "resources": [
+        "icons/*"
+      ],
+      "matches": [
+        "https://www.youtube.com/*"
+      ]
     }
   ]
 }

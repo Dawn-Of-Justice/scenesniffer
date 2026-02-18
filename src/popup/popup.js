@@ -1,88 +1,157 @@
 document.addEventListener('DOMContentLoaded', async () => {
-    // Check if API key exists
     const setupView = document.getElementById('setup-view');
     const mainView = document.getElementById('main-view');
     const setupMessage = document.getElementById('setup-message');
-    const statusElement = document.getElementById('status');
     const apiStatusElement = document.getElementById('api-status');
+    const modelStatusElement = document.getElementById('model-status');
+    const backButton = document.getElementById('back-button');
+    const infoBox = document.getElementById('info-box');
+    const resultContainer = document.getElementById('result-container');
+    const resultText = document.getElementById('result-text');
+    const identifyButton = document.getElementById('identify-button');
+    const inputField = document.getElementById('input-field');
 
-    try {
-        // Check if API key exists
-        const response = await chrome.runtime.sendMessage({ action: 'checkApiKey' });
-        
-        if (response.hasKey) {
-            // Show main view
-            mainView.style.display = 'block';
-            setupView.style.display = 'none';
-        } else {
-            // Show setup view
-            setupView.style.display = 'block';
-            mainView.style.display = 'none';
-        }
-    } catch (error) {
-        // Log the actual error for debugging but show friendly message to user
-        console.error('Error checking API key:', error);
-        setupMessage.textContent = 'Something went wrong. Please try reloading the extension.';
+    let hasApiKey = false;
+
+    // --- Helpers ---
+    function setMessage(text, type = 'info') {
+        if (!setupMessage) return;
+        setupMessage.textContent = text;
+        setupMessage.className = 'message';
+        setupMessage.classList.add(`message-${type}`);
     }
 
-    // Set up event listeners for API key saving
+    function updateKeyStatusUI(tier, status) {
+        if (apiStatusElement) {
+            apiStatusElement.className = 'value';
+            switch (status) {
+                case 'active':
+                    apiStatusElement.textContent = 'Active';
+                    apiStatusElement.classList.add('status-active');
+                    break;
+                case 'expired':
+                    apiStatusElement.textContent = 'Expired';
+                    apiStatusElement.classList.add('status-expired');
+                    break;
+                case 'invalid':
+                    apiStatusElement.textContent = 'Invalid';
+                    apiStatusElement.classList.add('status-invalid');
+                    break;
+                default:
+                    apiStatusElement.textContent = 'Unknown';
+                    apiStatusElement.classList.add('status-checking');
+            }
+        }
+
+        if (modelStatusElement) {
+            modelStatusElement.className = 'value';
+            if (tier === 'paid') {
+                modelStatusElement.textContent = 'Gemini 3 Flash ✨';
+                modelStatusElement.classList.add('tier-paid');
+            } else {
+                modelStatusElement.textContent = 'Gemini 2.5 Flash';
+                modelStatusElement.classList.add('tier-free');
+            }
+        }
+    }
+
+    // --- Initial load ---
+    try {
+        const response = await chrome.runtime.sendMessage({ action: 'checkApiKey' });
+        hasApiKey = response.hasKey;
+
+        if (hasApiKey) {
+            mainView.style.display = 'block';
+            setupView.style.display = 'none';
+
+            // Show loading state
+            if (apiStatusElement) {
+                apiStatusElement.textContent = 'Checking...';
+                apiStatusElement.className = 'value status-checking';
+            }
+            if (modelStatusElement) {
+                modelStatusElement.textContent = 'Detecting...';
+                modelStatusElement.className = 'value status-checking';
+            }
+
+            const statusResponse = await chrome.runtime.sendMessage({ action: 'getKeyStatus' });
+            updateKeyStatusUI(statusResponse.tier, statusResponse.status);
+        } else {
+            setupView.style.display = 'block';
+            mainView.style.display = 'none';
+            if (backButton) backButton.style.display = 'none';
+        }
+    } catch (error) {
+        console.error('Error checking API key:', error);
+        setMessage('Something went wrong. Please reload the extension.', 'error');
+    }
+
+    // --- Save API key ---
     document.getElementById('save-key').addEventListener('click', async () => {
         const apiKey = document.getElementById('api-key').value.trim();
-        
+
         if (!apiKey) {
-            setupMessage.textContent = 'Please enter an API key';
+            setMessage('Please enter an API key.', 'error');
             return;
         }
-        
+
         try {
-            setupMessage.textContent = 'Saving...';
-            const response = await chrome.runtime.sendMessage({ 
-                action: 'saveApiKey', 
-                apiKey: apiKey 
+            setMessage('Saving and verifying your key...', 'info');
+            const response = await chrome.runtime.sendMessage({
+                action: 'saveApiKey',
+                apiKey: apiKey
             });
-            
+
             if (response.success) {
-                setupMessage.textContent = 'API key saved successfully!';
+                hasApiKey = true;
+
+                if (response.status === 'invalid') {
+                    setMessage('This API key appears to be invalid. Please check and try again.', 'error');
+                    return;
+                }
+
+                const tierLabel = response.tier === 'paid' ? 'Gemini 3 Flash ✨' : 'Gemini 2.5 Flash';
+                setMessage(`Key saved! Using ${tierLabel}`, 'success');
+
                 setTimeout(() => {
                     setupView.style.display = 'none';
                     mainView.style.display = 'block';
-                }, 1500);
+                    updateKeyStatusUI(response.tier, response.status);
+                }, 1800);
             } else {
-                // Generic error message instead of showing the specific error
                 console.error('Failed to save API key:', response.error);
-                setupMessage.textContent = 'Could not save API key. Please try again.';
+                setMessage('Could not save API key. Please try again.', 'error');
             }
         } catch (error) {
             console.error('Error saving API key:', error);
-            setupMessage.textContent = 'Something went wrong. Please try again.';
+            setMessage('Something went wrong. Please try again.', 'error');
         }
     });
 
-    // Event listener for changing API key
+    // --- Change API key ---
     document.getElementById('change-key').addEventListener('click', async () => {
         try {
-            // Get the existing API key
             const response = await chrome.runtime.sendMessage({ action: 'getApiKey' });
-            
+
             if (response && response.apiKey) {
-                // Set the masked API key in the input field
                 const apiKeyInput = document.getElementById('api-key');
-                apiKeyInput.type = 'password'; // Start with password type (masked)
+                apiKeyInput.type = 'password';
                 apiKeyInput.value = response.apiKey;
             }
-            
-            // Switch to setup view
+
             mainView.style.display = 'none';
             setupView.style.display = 'block';
+            setMessage('', 'info');
+            if (backButton) backButton.style.display = 'flex';
         } catch (error) {
             console.error('Error retrieving API key:', error);
         }
     });
 
-    // Toggle API key visibility
+    // --- Toggle API key visibility ---
     const toggleVisibilityBtn = document.getElementById('toggle-visibility');
     if (toggleVisibilityBtn) {
-        toggleVisibilityBtn.addEventListener('click', function() {
+        toggleVisibilityBtn.addEventListener('click', function () {
             const apiKeyInput = document.getElementById('api-key');
             if (apiKeyInput.type === 'password') {
                 apiKeyInput.type = 'text';
@@ -102,33 +171,30 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
-    const socialLinks = document.querySelectorAll('.social-links a');
-    const identifyButton = document.getElementById('identify-button');
-    const resultContainer = document.getElementById('result-container');
-    const inputField = document.getElementById('input-field');
-
-    // Fix the identify button click handler
+    // --- Identify button ---
     if (identifyButton && resultContainer && inputField) {
         identifyButton.addEventListener('click', async () => {
             const userInput = inputField.value.trim();
             if (!userInput) {
-                resultContainer.textContent = 'Please enter a YouTube Shorts link.';
+                resultText.textContent = 'Please enter a YouTube Shorts link.';
+                resultContainer.style.display = 'block';
                 return;
             }
 
+            const videoIdMatch = userInput.match(/(?:shorts\/|v=|youtu.be\/)([^?&]+)/);
+            const videoId = videoIdMatch ? videoIdMatch[1] : null;
+
+            if (!videoId) {
+                resultText.textContent = 'Please enter a valid YouTube Shorts URL.';
+                resultContainer.style.display = 'block';
+                return;
+            }
+
+            if (infoBox) infoBox.style.display = 'none';
+            resultContainer.style.display = 'block';
+            resultText.textContent = 'Analyzing... Please wait.';
+
             try {
-                resultContainer.textContent = 'Analyzing video...';
-                
-                // Extract the video ID from the URL
-                const videoIdMatch = userInput.match(/(?:shorts\/|v=|youtu.be\/)([^?&]+)/);
-                const videoId = videoIdMatch ? videoIdMatch[1] : null;
-                
-                if (!videoId) {
-                    resultContainer.textContent = 'Please enter a valid YouTube Shorts URL.';
-                    return;
-                }
-                
-                // Format the data to match what the background script expects
                 const videoInfo = {
                     url: userInput,
                     title: `YouTube Shorts (ID: ${videoId})`,
@@ -137,70 +203,31 @@ document.addEventListener('DOMContentLoaded', async () => {
                     videoId: videoId
                 };
 
-                console.log("Sending video info to background:", videoInfo);
-                
-                // Send the message to the background script
-                const response = await chrome.runtime.sendMessage({ 
-                    action: 'identifyEpisode', 
-                    data: videoInfo 
+                const response = await chrome.runtime.sendMessage({
+                    action: 'identifyEpisode',
+                    data: videoInfo
                 });
-                
-                console.log("Received response:", response);
-                
+
                 if (response && response.result) {
-                    resultContainer.innerHTML = response.result.replace(/\n/g, '<br>');
+                    resultText.innerHTML = response.result.replace(/\n/g, '<br>');
                 } else if (response && response.error) {
-                    // Log actual error but show generic message
                     console.error('API error:', response.error);
-                    resultContainer.textContent = 'Something went wrong. Please try again.';
+                    resultText.textContent = 'Something went wrong. Please try again.';
                 } else {
-                    resultContainer.textContent = 'Could not identify this video. Please try another clip.';
+                    resultText.textContent = 'Could not identify this video. Please try another clip.';
                 }
             } catch (error) {
-                // Log actual error but show generic message
                 console.error('Error identifying episode:', error);
-                resultContainer.textContent = 'Something went wrong. Please try again later.';
+                resultText.textContent = 'Something went wrong. Please try again later.';
             }
         });
     }
 
-    // Handle back button functionality
-    const backButton = document.getElementById('back-button');
+    // --- Back button ---
     if (backButton) {
-        backButton.addEventListener('click', function() {
-            // Hide setup view
-            document.getElementById('setup-view').style.display = 'none';
-            
-            // Show main view
-            document.getElementById('main-view').style.display = 'block';
+        backButton.addEventListener('click', function () {
+            setupView.style.display = 'none';
+            mainView.style.display = 'block';
         });
     }
-});
-
-// Update the second event listener as well
-document.addEventListener('DOMContentLoaded', function () {
-    const infoBox = document.getElementById('info-box');
-    const resultContainer = document.getElementById('result-container');
-    const resultText = document.getElementById('result-text');
-    const identifyButton = document.getElementById('identify-button');
-    const inputField = document.getElementById('input-field');
-
-    // Handle manual prediction
-    identifyButton.addEventListener('click', async function () {
-        const url = inputField.value.trim();
-
-        if (!url) {
-            resultContainer.textContent = 'Please enter a YouTube Shorts URL.';
-            resultContainer.style.display = 'block';
-            return;
-        }
-
-        // Hide the "How to use" section and show the result container
-        infoBox.style.display = 'none';
-        resultContainer.style.display = 'block';
-
-        // Simulate loading
-        resultContainer.textContent = 'Analyzing... Please wait.';
-
-    });
 });

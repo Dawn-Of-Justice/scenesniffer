@@ -1,11 +1,10 @@
-# ScreenSniffer - A YouTube Shorts Identifier
+# SceneSniffer - A YouTube Shorts Identifier
 
-ScreenSniffer is a Chrome extension that identifies whether a YouTube Shorts video is from a movie or TV series, including specific details like show name, season, episode number, and episode title when applicable. It uses an advanced AI model with a custom prompt to analyse video metadata and thumbnails for accurate identification.
+SceneSniffer is a Chrome extension that identifies whether a YouTube Shorts video is from a movie or TV series, including specific details like show name, season, episode number, and episode title when applicable. It uses Google's Gemini AI to analyze video metadata for accurate identification.
 
-**If you wanna checkout the plugin yourself!** [Chrome Webstore](https://chromewebstore.google.com/detail/scenesniffer/ibpdiakpiokijoafnambiahjanhnbieo?authuser=0&hl=en)
+**[Install from Chrome Web Store](https://chromewebstore.google.com/detail/scenesniffer/ibpdiakpiokijoafnambiahjanhnbieo)**
 
 **Check out here for more info:** [https://dawn-of-justice.github.io/scenesniffer/](https://dawn-of-justice.github.io/scenesniffer/)
-<br>Note - This Project is under development, for easier use, this will be published to the webstore soon. 
 
 **See it in action**
 
@@ -15,11 +14,17 @@ ScreenSniffer is a Chrome extension that identifies whether a YouTube Shorts vid
 ## Features
 
 - **Movie and Series Identification**: Determines if a YouTube Short is from a movie or TV series, providing episode details for series when available.
-- **AI-Powered Analysis**: Leverages a sophisticated AI model to process video title, description, channel, URL, and thumbnail data.
-- **High Accuracy**: Combines multiple data sources with a weighted focus on title and description for reliable results.
-- **User-Friendly Interface**: Simple and intuitive design for seamless navigation and quick identification.
+- **AI-Powered Analysis**: Leverages Google's Gemini AI to process video title, description, channel, URL, and thumbnail data.
+- **Smart Tier Detection**: Automatically detects paid vs free API keys — paid keys get Gemini 3 Flash with Google Search grounding.
+- **User-Friendly Interface**: Simple and intuitive design with a floating button on YouTube Shorts for quick identification.
 
 ## Installation
+
+1. Install from the [Chrome Web Store](https://chromewebstore.google.com/detail/scenesniffer/ibpdiakpiokijoafnambiahjanhnbieo)
+2. Click the SceneSniffer icon in the Chrome toolbar
+3. Add your [Google AI Studio](https://aistudio.google.com/apikey) API key
+
+### For Developers
 
 1. Clone the repository:
    ```
@@ -28,13 +33,17 @@ ScreenSniffer is a Chrome extension that identifies whether a YouTube Shorts vid
 2. Load the extension in Chrome:
    - Open Chrome and go to `chrome://extensions/`
    - Enable "Developer mode"
-   - Click "Load unpacked" and select the `ScreenSniffer` directory.
+   - Click "Load unpacked" and select the `SceneSniffer` directory.
 
 ## Usage
 
-1. Click on the extension icon in the Chrome toolbar.
-2. Add the Google Studio API key into the API bar. The extension is now activated.
-3. Navigate to a YouTube Shorts video and click the extension icon to identify the episode.
+1. Navigate to a YouTube Shorts video
+2. Click the red SceneSniffer button in the bottom-right corner
+3. Wait for the scene to be identified — results appear in a floating card
+
+## Feedback
+
+Have feedback or found a bug? [Let us know!](https://forms.gle/GYHMpkbXbRaTExMm7)
 
 ## Contributing
 
